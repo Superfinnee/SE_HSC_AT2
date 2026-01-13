@@ -50,9 +50,30 @@ def register():
         conn.close()
     return render_template('register.html')
 
+@app.route('/login', methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        username = request.form['username']
+        password = request.form['password']
+        conn = sqlite3.connect('app.db')
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
+        user = cursor.fetchone()
+        print(user)
+        conn.close()
+        if user and check_password_hash(user[5], password):
+            session['userID'] = user[0]
+            session['username'] = user[4]
+            flash('Login successful!', 'success')
+            return redirect('/')
+        flash ("Invalid username or password", "error")
+    return render_template('login.html')
+
 
 @app.route("/")
 def index():    
+    if 'userID' not in session:
+        return redirect('/login')
     return render_template("index.html")
 
 if __name__ == "__main__":
