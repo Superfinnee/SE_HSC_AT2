@@ -1,0 +1,15 @@
+{% extends "layout.html" %}
+
+{% block body %}
+
+<h1>Login</h1>
+<form action="/login" method="post">
+    
+    <!--Need to make username input to be both email and username-->
+    <input name="username" placeholder="Username" type="text" required> 
+    <input name="password" placeholder="Password" type="password" required>
+    <button type="submit">Login</button>
+</form>
+<p>Don't have an account? <a href="/register">Register here</a></p>
+
+{% endblock %}

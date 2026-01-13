@@ -1,0 +1,16 @@
+{% extends "layout.html" %}
+
+{% block body %}
+
+<h1>Login</h1>
+<form action="/register" method="post">
+    <input name="fName" placeholder="First Name" type="text" required>
+    <input name="lName" placeholder="Last Name" type="text" required>
+    <input name="email" placeholder="Email" type="text" required>
+    <input name="username" placeholder="Username" type="text" required>
+    <input name="password" placeholder="Password" type="password" required>
+    <button type="submit">Login</button>
+</form>
+<p>Already have an account? <a href="/login">Login here</a></p>
+
+{% endblock %}
