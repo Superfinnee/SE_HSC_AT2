@@ -1,0 +1,23 @@
+:root {
+    --Honeydew: #D9E5D6; /* Sidebar - Use black for buttons */
+    --Fresh-sky: #00A7E1;
+    --Vanilla-Custard: #EDDEA4; /* Main background */
+    --Tangerine-Dream: #F7A072; /* Hover buttons */
+    --Sandy-Brown: #FF9B42; /* Buttons */
+    --Space-Indigo: #2E2D4D; /* Possible Text color */
+    background-color: var(--Vanilla-Custard);
+}
+
+button {
+    background-color: var(--Sandy-Brown);
+    color: black;
+    border: solid 1px black;
+    padding: 2px 15px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    border-radius: 10px;
+    color: #337357;
+}
+button:hover {
+    background-color: var(--Tangerine-Dream);
+}
