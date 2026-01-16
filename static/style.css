@@ -5,19 +5,54 @@
     --Tangerine-Dream: #F7A072; /* Hover buttons */
     --Sandy-Brown: #FF9B42; /* Buttons */
     --Space-Indigo: #2E2D4D; /* Possible Text color */
+    --Shadow-Grey: #171727; /* Possible Text color */
     background-color: var(--Vanilla-Custard);
+    color: var(--Space-Indigo);
+    font-family: Arial, Helvetica, sans-serif;
 }
 
 button {
+    border: 1px solid var(--Space-Indigo);
+    padding: 8px;
+    border-radius: 4px;
+    width: 250px;
+    box-sizing: border-box;
+    color: var(--Space-Indigo);
+    background-color: var(--Sandy-Brown); 
+    cursor: pointer; 
+    transition: background-color 0.3s ease;
+    /*
     background-color: var(--Sandy-Brown);
-    color: black;
     border: solid 1px black;
     padding: 2px 68px;
     cursor: pointer;
     transition: background-color 0.3s ease;
-    border-radius: 2px;
-    color: var(--Space-Indigo);
+    border-radius: 4px;,
+    color: var(--Space-Indigo);*/
 }
 button:hover {
     background-color: var(--Tangerine-Dream);
+}
+
+a {
+    background-color: var(--Sandy-Brown);
+    color: black;
+    border: solid 1px black;
+    padding: 1px 15px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    border-radius: 4px;
+    color: var(--Space-Indigo);
+    text-decoration: none;
+}
+a:hover {
+    background-color: var(--Tangerine-Dream);
+}
+
+input[type="text"], input[type="password"], input[type="email"] {
+    border: 1px solid var(--Space-Indigo);
+    padding: 8px;
+    border-radius: 4px;
+    width: 250px;
+    box-sizing: border-box;
 }
