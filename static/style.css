@@ -12,10 +12,10 @@ button {
     background-color: var(--Sandy-Brown);
     color: black;
     border: solid 1px black;
-    padding: 2px 15px;
+    padding: 2px 68px;
     cursor: pointer;
     transition: background-color 0.3s ease;
-    border-radius: 10px;
+    border-radius: 2px;
     color: #337357;
 }
 button:hover {
