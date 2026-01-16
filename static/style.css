@@ -16,7 +16,7 @@ button {
     cursor: pointer;
     transition: background-color 0.3s ease;
     border-radius: 2px;
-    color: #337357;
+    color: var(--Space-Indigo);
 }
 button:hover {
     background-color: var(--Tangerine-Dream);
