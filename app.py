@@ -69,6 +69,11 @@ def login():
         flash ("Invalid username or password", "error")
     return render_template('login.html')
 
+@app.route('/logout')
+def logout():
+    session.clear()
+    flash('You have been logged out.', 'success')
+    return redirect('/login')
 
 @app.route("/")
 def index():    
