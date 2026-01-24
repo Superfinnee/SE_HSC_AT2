@@ -6,7 +6,7 @@ app = Flask(__name__)
 app.secret_key = 'AP_Fp3279Fp'
 
 def initDB():
-    conn = sqlite3.connect('app.db')
+    conn = sqlite3.connect('piccoliTicketi.db')
     cursor = conn.cursor()
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS users(
@@ -15,7 +15,21 @@ def initDB():
             lname TEXT NOT NULL,
             email TEXT UNIQUE NOT NULL,
             username TEXT UNIQUE NOT NULL,
-            password TEXT NOT NULL)
+            password TEXT NOT NULL,
+            status TEXT DEFAULT 'user')
+    ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS tickets(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            userID INTEGER NOT NULL,
+            title TEXT NOT NULL,
+            description TEXT NOT NULL,
+            status TEXT NOT NULL,
+            priority TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            attatchments BLOB,
+            FOREIGN KEY (userID) REFERENCES users(id)
+        )
     ''')
     conn.commit()
     conn.close()
@@ -26,12 +40,12 @@ initDB()
 def register():
     if request.method == 'POST':
         fName = request.form['fName']
-        lName = request.form['fName']
+        lName = request.form['lName']
         email = request.form['email']
         username = request.form['username']
         password = request.form['password']
         hashedPassword = generate_password_hash(password)
-        conn = sqlite3.connect('app.db')
+        conn = sqlite3.connect('piccoliTicketi.db')
         cursor = conn.cursor()
         #Check if username already exists
         cursor.execute("SELECT COUNT(*) FROM users WHERE username = ?", (username,))
@@ -55,7 +69,7 @@ def login():
     if request.method == "POST":
         username = request.form['username']
         password = request.form['password']
-        conn = sqlite3.connect('app.db')
+        conn = sqlite3.connect('piccoliTicketi.db')
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
         user = cursor.fetchone()
@@ -85,6 +99,24 @@ def admin():
     conn.commit()
     conn.close()
     return redirect('/')'''
+
+@app.route('/createTicket', methods=["GET", "POST"])
+def createTicket():
+    if 'userID' not in session:
+        return redirect('/login')
+    if request.method == "POST":
+        title = request.form['title']
+        description = request.form['description']
+        userID = session['userID']
+        attachment = request.form.get('attachment', None)
+        conn = sqlite3.connect('piccoliTicketi.db')
+        cursor = conn.cursor()
+        cursor.execute('INSERT INTO tickets (userID, title, description, status, attachment) values (?, ?, ?, ?, ?)', (userID, title, description, 'Open', attachment))
+        conn.commit()
+        conn.close()
+        flash('Ticket created successfully!', 'success')
+        return redirect('/')
+    return render_template('createTicket.html')
 
 @app.route("/")
 def index():    
