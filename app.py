@@ -69,7 +69,17 @@ def login():
         flash ("Invalid username or password", "error")
     return render_template('login.html')
 
-
+#To create a new admin user, paste <a href="/admin">admin</a> in the index.html file and click it once while logged in as the user you want to make admin.
+#Also unccoment below:
+'''@app.route("/admin")
+def admin():
+    conn = sqlite3.connect('piccoliTicketi.db')
+    cursor = conn.cursor()
+    cursor.execute("UPDATE users SET status = 'admin' WHERE username = ?", (session['username'],))
+    conn.commit()
+    conn.close()
+    return redirect('/')'''
+    
 @app.route("/")
 def index():    
     if 'userID' not in session:
