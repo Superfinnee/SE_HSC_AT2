@@ -94,7 +94,7 @@ def createTicket():
         attachment = request.form.get('attachment', None)
         conn = sqlite3.connect('piccoliTicketi.db')
         cursor = conn.cursor()
-        cursor.execute('INSERT INTO tickets (userID, title, description, status, attachment) values (?, ?, ?, ?, ?)', (userID, title, description, 'Open', attachment))
+        cursor.execute('INSERT INTO tickets (userID, title, description, status, attatchments) values (?, ?, ?, ?, ?)', (userID, title, description, 'Open', attachment))
         conn.commit()
         conn.close()
         flash('Ticket created successfully!', 'success')
