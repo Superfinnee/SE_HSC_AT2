@@ -1,6 +1,7 @@
 from flask import Flask, render_template, redirect, request, session, flash
 import sqlite3
 from werkzeug.security import generate_password_hash, check_password_hash
+from bs4 import BeautifulSoup as BS
 
 app = Flask(__name__)
 app.secret_key = 'AP_Fp3279Fp'
@@ -122,7 +123,12 @@ def createTicket():
 def index():    
     if 'userID' not in session:
         return redirect('/login')
-    return render_template("index.html")
+    conn = sqlite3.connect('piccoliTicketi.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM tickets WHERE userID = ?", (session['userID'],))
+    ticketsList = cursor.fetchall()
+    conn.close()
+    return render_template("index.html", tickets=ticketsList)
 
 if __name__ == "__main__":
     app.run(debug=True)

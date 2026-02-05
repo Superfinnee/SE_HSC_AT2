@@ -2,7 +2,30 @@
 
 {% block body %}
 
-<a href="/createTicket">Create New Ticket</a>
-<a href="/logout">Logout</a>
+<div class="buttonsContainer">
+    <a href="/createTicket">Create New Ticket</a>
+    <a href="/logout">Logout</a>
+</div>
+
+<table class="tickets">
+    <tr>
+        <th>Title</th>
+        <th>Description</th>
+        <th>Status</th>
+        <th>Image</th>
+        <th>Actions</th>
+    </tr>
+    {% for ticket in tickets %}
+    <tr>
+        <td>{{ ticket[2] }}</td>
+        <td>{{ ticket[3] }}</td>
+        <td>{{ ticket[4] }}</td>
+        <td><img src="{{ ticket[7] }}"></td><!--help how do I do this?-->
+        <td>
+            <!-- add edit and delete buttons -->
+        </td>
+    </tr>
+    {% endfor %}
+</table>
 
 {% endblock %}
