@@ -130,5 +130,19 @@ def index():
     conn.close()
     return render_template("index.html", tickets=ticketsList)
 
+@app.route("/delete_item", methods=["POST"])
+def delete_item():
+    #recordIndex = int(request.form.get("delete"))
+    #toDoList.pop(recordIndex)
+    
+    itemID = request.form.get("delete")
+    conn = sqlite3.connect('piccoliTicketi.db')
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM tickets WHERE ID = ?", (itemID))
+    conn.commit()
+    conn.close()
+        
+    return redirect("/")
+
 if __name__ == "__main__":
     app.run(debug=True)
