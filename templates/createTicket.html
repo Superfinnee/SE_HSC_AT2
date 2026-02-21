@@ -2,15 +2,16 @@
 
 {% block body %}
     <h1>Create New Ticket</h1>
-    <form method="POST" action="/createTicket">
+    <form method="POST" action="/createTicket" enctype="multipart/form-data">
+
         <label for="title">Title:</label>
         <input type="text" id="title" name="title" placeholder="Title" required><br><br>
 
         <label for="description">Description:</label>
         <textarea id="description" name="description" placeholder="Describe your issue" required></textarea><br><br>
 
-        <label for="attachment">Upload a screenshot:</label>
-        <input type="file" id="attachment" name="attachment"><br><br>
+        <label for="attachment">Upload a screenshot (optional):</label>
+        <input type="file" id="attachment" name="attachment" accept="image/*"><br><br>
 
         <button type="submit">Create Ticket</button>
     </form>

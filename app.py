@@ -1,10 +1,13 @@
 from flask import Flask, render_template, redirect, request, session, flash
-import sqlite3
+import sqlite3, os
 from werkzeug.security import generate_password_hash, check_password_hash
-from bs4 import BeautifulSoup as BS
+from uuid import uuid4
+
 
 app = Flask(__name__)
 app.secret_key = 'AP_Fp3279Fp'
+UPLOAD_FOLDER = os.path.join('static', 'uploads')
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 def initDB():
     conn = sqlite3.connect('piccoliTicketi.db')
@@ -28,7 +31,7 @@ def initDB():
             status TEXT NOT NULL,
             priority TEXT,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            attatchments BLOB,
+            imagePath TEXT,
             FOREIGN KEY (userID) REFERENCES users(id)
         )
     ''')
@@ -109,12 +112,28 @@ def createTicket():
         title = request.form['title']
         description = request.form['description']
         userID = session['userID']
-        attachment = request.form.get('attachment', None)
+        
+        file = request.files.get('attachment')
+        imagePath = None
+        
+        if file and file.filename:
+            if not file.mimetype.startswith("image/"):
+                flash("Please check your uploaded file, only images are allowed.", "error")
+                return redirect('/createTicket')
+            
+            ext = os.path.splitext(file.filename)[1].lower()
+            uniqueName = f"{uuid4().hex}{ext}"
+            
+            savePath = os.path.join(UPLOAD_FOLDER, uniqueName)
+            file.save(savePath)
+            imagePath = f"uploads/{uniqueName}"
+        
         conn = sqlite3.connect('piccoliTicketi.db')
         cursor = conn.cursor()
-        cursor.execute('INSERT INTO tickets (userID, title, description, status, attatchments) values (?, ?, ?, ?, ?)', (userID, title, description, 'Open', attachment))
+        cursor.execute('INSERT INTO tickets (userID, title, description, status, imagePath) values (?, ?, ?, ?, ?)', (userID, title, description, 'Open', imagePath))
         conn.commit()
         conn.close()
+        
         flash('Ticket created successfully!', 'success')
         return redirect('/')
     return render_template('createTicket.html')
@@ -127,6 +146,7 @@ def index():
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM tickets WHERE userID = ?", (session['userID'],))
     ticketsList = cursor.fetchall()
+    print(ticketsList)
     conn.close()
     return render_template("index.html", tickets=ticketsList)
 
@@ -138,10 +158,45 @@ def delete_item():
     itemID = request.form.get("delete")
     conn = sqlite3.connect('piccoliTicketi.db')
     cursor = conn.cursor()
-    cursor.execute("DELETE FROM tickets WHERE ID = ?", (itemID))
+    cursor.execute("DELETE FROM tickets WHERE ID = ?", (itemID,))
     conn.commit()
     conn.close()
         
+    return redirect("/")
+
+@app.route("/editItem", methods=["POST"])
+def editItem():
+    #global editIndex
+    editID = int(request.form.get("edit", 0))
+    conn = sqlite3.connect('piccoliTicketi.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM tickets")
+    tickets = cursor.fetchall()
+    conn.close()
+    return render_template("index.html", tickets=tickets, editIndex=editID)
+
+@app.route("/saveItem", methods=["POST"])
+def saveItem():
+    #global edit_Index
+    #recordIndex = int(request.form.get("editIndex"))
+    itemID = request.form.get("editIndex") 
+    newTitle = request.form.get("newItem")
+    newDescription = request.form.get("newDescription")
+    
+    #toDoList[recordIndex]["item"] = newItem
+    #toDoList[recordIndex]["priority"] = newPriority
+    
+    conn = sqlite3.connect('piccoliTicketi.db')
+    cursor = conn.cursor()
+    cursor.execute(
+        "UPDATE tickets SET title = ? WHERE ID = ?",(newTitle, itemID)
+    )
+    conn.commit()
+    cursor.execute("UPDATE tickets SET description = ? WHERE ID = ?",(newDescription, itemID))
+    conn.commit()
+    conn.close()
+    
+    #edit_Index = None
     return redirect("/")
 
 if __name__ == "__main__":
