@@ -144,9 +144,13 @@ def index():
         return redirect('/login')
     conn = sqlite3.connect('piccoliTicketi.db')
     cursor = conn.cursor()
+    cursor.execute("SELECT status FROM users WHERE id = ?", (session['userID'],))
+    userStatus = cursor.fetchone()
+    if userStatus and userStatus[0] == 'admin':
+        return redirect('/admin')
+    
     cursor.execute("SELECT * FROM tickets WHERE userID = ?", (session['userID'],))
     ticketsList = cursor.fetchall()
-    print(ticketsList)
     conn.close()
     return render_template("index.html", tickets=ticketsList)
 
@@ -198,6 +202,17 @@ def saveItem():
     
     #edit_Index = None
     return redirect("/")
+
+@app.route("/admin", methods=["GET", "POST"])
+def admin():
+    if 'userID' not in session:
+        return redirect('/login')
+    conn = sqlite3.connect('piccoliTicketi.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM tickets ORDER BY created_at ASC, priority DESC")
+    tickets = cursor.fetchall()
+    conn.close()
+    return render_template("admin.html", tickets=tickets)
 
 if __name__ == "__main__":
     app.run(debug=True)
