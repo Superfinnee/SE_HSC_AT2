@@ -2,6 +2,7 @@ from flask import Flask, render_template, redirect, request, session, flash
 import sqlite3, os
 from werkzeug.security import generate_password_hash, check_password_hash
 from uuid import uuid4
+from markupsafe import escape
 
 
 app = Flask(__name__)
@@ -43,10 +44,10 @@ initDB()
 @app.route("/register", methods=["GET", "POST"])
 def register():
     if request.method == 'POST':
-        fName = request.form['fName']
-        lName = request.form['lName']
-        email = request.form['email']
-        username = request.form['username']
+        fName = escape(request.form['fName'])
+        lName = escape(request.form['lName'])
+        email = escape(request.form['email'])
+        username = escape(request.form['username'])
         password = request.form['password']
         hashedPassword = generate_password_hash(password)
         conn = sqlite3.connect('piccoliTicketi.db')
@@ -109,8 +110,8 @@ def createTicket():
     if 'userID' not in session:
         return redirect('/login')
     if request.method == "POST":
-        title = request.form['title']
-        description = request.form['description']
+        title = escape(request.form['title'])
+        description = escape(request.form['description'])
         userID = session['userID']
         
         file = request.files.get('attachment')
@@ -179,9 +180,9 @@ def editItem():
 def saveItem():
     #global edit_Index
     #recordIndex = int(request.form.get("editIndex"))
-    itemID = request.form.get("editIndex") 
-    newTitle = request.form.get("newItem")
-    newDescription = request.form.get("newDescription")
+    itemID = escape(request.form.get("editIndex"))
+    newTitle = escape(request.form.get("newItem"))
+    newDescription = escape(request.form.get("newDescription"))
     
     #toDoList[recordIndex]["item"] = newItem
     #toDoList[recordIndex]["priority"] = newPriority
