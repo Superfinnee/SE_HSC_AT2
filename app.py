@@ -2,12 +2,17 @@ from flask import Flask, render_template, redirect, request, session, flash
 import sqlite3, os
 from werkzeug.security import generate_password_hash, check_password_hash
 from uuid import uuid4
+from markupsafe import escape 
+
 
 
 app = Flask(__name__)
 app.secret_key = 'AP_Fp3279Fp'
 UPLOAD_FOLDER = os.path.join('static', 'uploads')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+priorities = ['Low', 'Medium', 'High']
+
+
 
 def initDB():
     conn = sqlite3.connect('piccoliTicketi.db')
@@ -35,19 +40,42 @@ def initDB():
             FOREIGN KEY (userID) REFERENCES users(id)
         )
     ''')
+    cursor.execute('''
+            CREATE TABLE IF NOT EXISTS closedTickets(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            userID INTEGER NOT NULL,
+            title TEXT NOT NULL,
+            description TEXT NOT NULL,
+            status TEXT NOT NULL,
+            priority TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            imagePath TEXT,
+            FOREIGN KEY (userID) REFERENCES users(id)
+        )
+    ''')
     conn.commit()
     conn.close()
     
 initDB()
 
+def returnAdmin():
+    conn = sqlite3.connect('piccoliTicketi.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT status FROM users WHERE id = ?", (session['userID'],))
+    userStatus = cursor.fetchone()
+    conn.close()
+    if userStatus and userStatus[0] == 'admin':
+        return redirect('/admin')
+    return redirect('/')
+
 @app.route("/register", methods=["GET", "POST"])
 def register():
     if request.method == 'POST':
-        fName = request.form['fName']
-        lName = request.form['lName']
-        email = request.form['email']
-        username = request.form['username']
-        password = request.form['password']
+        fName = escape(request.form['fName'])
+        lName = escape(request.form['lName'])
+        email = escape(request.form['email'])
+        username = escape(request.form['username'])
+        password = escape(request.form['password'])
         hashedPassword = generate_password_hash(password)
         conn = sqlite3.connect('piccoliTicketi.db')
         cursor = conn.cursor()
@@ -56,7 +84,7 @@ def register():
         userExists = cursor.fetchone()[0] > 0
         
         if userExists:
-            flash("Username already exists.", 'error')
+            flash('Username already exists.', 'error')
         else:
             #Insert new user
             cursor.execute('INSERT INTO users (fName, lName, email, username, password) values (?, ?, ?, ?, ?)', (fName, lName, email, username, hashedPassword))
@@ -71,8 +99,8 @@ def register():
 @app.route('/login', methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        username = request.form['username']
-        password = request.form['password']
+        username = escape(request.form['username'])
+        password = escape(request.form['password'])
         conn = sqlite3.connect('piccoliTicketi.db')
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
@@ -109,8 +137,8 @@ def createTicket():
     if 'userID' not in session:
         return redirect('/login')
     if request.method == "POST":
-        title = request.form['title']
-        description = request.form['description']
+        title = escape(request.form['title'])
+        description = escape(request.form['description'])
         userID = session['userID']
         
         file = request.files.get('attachment')
@@ -151,20 +179,36 @@ def index():
     
     cursor.execute("SELECT * FROM tickets WHERE userID = ?", (session['userID'],))
     ticketsList = cursor.fetchall()
+    cursor.execute("SELECT * FROM closedTickets WHERE userID = ?", (session['userID'],))
+    ticketsList += cursor.fetchall()
     conn.close()
     return render_template("index.html", tickets=ticketsList)
 
 @app.route("/delete_item", methods=["POST"])
 def delete_item():
+    
+    itemID = request.form.get("delete")
+    conn = sqlite3.connect('piccoliTicketi.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM tickets WHERE ID = ?", (itemID,))
+    item = cursor.fetchone()
+    cursor.execute("INSERT INTO closedTickets (userID, title, description, status, priority, created_at, imagePath) VALUES (?, ?, ?, ?, ?, ?, ?)", (item[1], item[2], item[3], "Closed", item[5], item[6], item[7]))
+    conn.commit()
+    cursor.execute("DELETE FROM tickets WHERE ID = ?", (itemID,))
+    conn.commit()
+    conn.close()
+    returnAdmin()
+    return redirect("/")
+
     #recordIndex = int(request.form.get("delete"))
     #toDoList.pop(recordIndex)
-    
+    '''
     itemID = request.form.get("delete")
     conn = sqlite3.connect('piccoliTicketi.db')
     cursor = conn.cursor()
     cursor.execute("DELETE FROM tickets WHERE ID = ?", (itemID,))
     conn.commit()
-    conn.close()
+    conn.close()'''
         
     return redirect("/")
 
@@ -174,33 +218,61 @@ def editItem():
     editID = int(request.form.get("edit", 0))
     conn = sqlite3.connect('piccoliTicketi.db')
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM tickets")
+    cursor.execute("SELECT * FROM tickets WHERE ID = ?", (editID,))
     tickets = cursor.fetchall()
     conn.close()
+    conn = sqlite3.connect('piccoliTicketi.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT status FROM users WHERE id = ?", (session['userID'],))
+    userStatus = cursor.fetchone()
+    if userStatus and userStatus[0] == 'admin':
+        return render_template('admin.html', tickets=tickets, editIndex=editID, priority=priorities)
     return render_template("index.html", tickets=tickets, editIndex=editID)
 
 @app.route("/saveItem", methods=["POST"])
 def saveItem():
     #global edit_Index
     #recordIndex = int(request.form.get("editIndex"))
-    itemID = request.form.get("editIndex") 
-    newTitle = request.form.get("newItem")
-    newDescription = request.form.get("newDescription")
+    conn = sqlite3.connect('piccoliTicketi.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT status FROM users WHERE id = ?", (session['userID'],))
+    userStatus = cursor.fetchone()
+    if userStatus and userStatus[0] == 'user':
+        itemID = request.form.get("editIndex") 
+        newTitle = escape(request.form.get("newItem"))
+        newDescription = escape(request.form.get("newDescription"))
+        cursor.execute("UPDATE tickets SET title = ?, description = ? WHERE ID = ?",(newTitle, newDescription, itemID))
+        conn.commit()
+    elif userStatus and userStatus[0] == 'admin':
+        itemID = request.form.get("editIndex") 
+        newTitle = escape(request.form.get("newItem"))
+        newDescription = escape(request.form.get("newDescription"))
+        newStatus = escape(request.form.get("newStatus"))
+        newPriority = escape(request.form.get("newPriority"))
+        cursor.execute("UPDATE tickets SET title = ?, description = ?, status = ?, priority = ? WHERE ID = ?",(newTitle, newDescription, newStatus, newPriority, itemID))
+        conn.commit()
     
     #toDoList[recordIndex]["item"] = newItem
     #toDoList[recordIndex]["priority"] = newPriority
     
-    conn = sqlite3.connect('piccoliTicketi.db')
-    cursor = conn.cursor()
-    cursor.execute(
-        "UPDATE tickets SET title = ? WHERE ID = ?",(newTitle, itemID)
-    )
-    conn.commit()
-    cursor.execute("UPDATE tickets SET description = ? WHERE ID = ?",(newDescription, itemID))
-    conn.commit()
     conn.close()
     
     #edit_Index = None
+    return returnAdmin()
+
+@app.route("/solve_item", methods=["GET", "POST"])
+def solve_item():
+    itemID = request.form.get("solve")
+    conn = sqlite3.connect('piccoliTicketi.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM tickets WHERE ID = ?", (itemID,))
+    item = cursor.fetchone()
+    cursor.execute("INSERT INTO closedTickets (userID, title, description, status, priority, created_at, imagePath) VALUES (?, ?, ?, ?, ?, ?, ?)", (item[1], item[2], item[3], "Solved", item[5], item[6], item[7]))
+    conn.commit()
+    cursor.execute("DELETE FROM tickets WHERE ID = ?", (itemID,))
+    conn.commit()
+    conn.close()
+    returnAdmin()
     return redirect("/")
 
 @app.route("/admin", methods=["GET", "POST"])
@@ -209,7 +281,7 @@ def admin():
         return redirect('/login')
     conn = sqlite3.connect('piccoliTicketi.db')
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM tickets ORDER BY created_at ASC, priority DESC")
+    cursor.execute("SELECT * FROM tickets ORDER BY priority ASC, created_at ASC")
     tickets = cursor.fetchall()
     conn.close()
     return render_template("admin.html", tickets=tickets)

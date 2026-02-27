@@ -1,12 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
     <head>
+        <meta charset="UTF-8">
         <meta name="viewport" content="initial-scale=1, width-device-width">
         <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
         <Title></Title>
     </head>
     <body>
+        <div class="wrapper">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            <div class="flash-messages">
+                {% for category, message in messages %}
+                <p class="{{ category }}">{{ message }}</p>
+                {% endfor %}
+            {% endif %}
+            {% endwith %}
+            </div>
         {% block body%}
         {% endblock %}
+        </div>
     </body>
 </html>
