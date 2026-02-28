@@ -25,16 +25,16 @@
                 <form action="{{ url_for('saveItem') }}" method="POST">
                     <!--Change title-->
                         <td>
-                            <input type="hidden" name="editIndex" value="{{ ticket[0] }}">
-                            <input type="text" name="newItem" value="{{ ticket[2] }}">
+                            <input type="hidden" name="editIndex" value="{{ ticket[0] | safe }}">
+                            <input type="text" name="newItem" value="{{ ticket[2] | safe }}">
                         </td>
                     <!--Change description-->
                         <td>
-                            <input type="text" name="newDescription" value="{{ ticket[3] }}">
+                            <input type="text" name="newDescription" value="{{ ticket[3] | safe }}">
                         </td>
                     <!--Change status-->
                         <td>
-                            <input type="text" name="newStatus" value="{{ ticket[4] }}">
+                            <input type="text" name="newStatus" value="{{ ticket[4] | safe }}">
                         </td>
                     <!--Change priority-->
                         <td>

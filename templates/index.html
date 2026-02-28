@@ -38,7 +38,7 @@
                 <button class="delete-btn" title="Delete">&#128465;</button>
             </form>
         </td>
-        <td>{{ ticket[4] }}</td>
+        <td>{{ ticket[4] | safe }}</td>
         <td>
         {% if ticket[7] %}
                 <img src="{{ url_for('static', filename=ticket[7]) }}" style="max-height:100px;">
@@ -46,8 +46,8 @@
         </td>
         {% else %}
         
-        <td>{{ ticket[2] }}</td>
-        <td>{{ ticket[3] }}</td>
+        <td>{{ ticket[2] | safe }}</td>
+        <td>{{ ticket[3] | safe }}</td>
          <td class="edit">
             <form action="{{ url_for('editItem') }}" method="POST">
                 <input type="hidden" name="edit" value="{{ ticket[0] }}">
@@ -60,7 +60,7 @@
                 <button class="delete-btn" title="Delete">&#128465;</button>
             </form>
         </td>
-        <td>{{ ticket[4] }}</td>
+        <td>{{ ticket[4] | safe }}</td>
         <td>
             {% if ticket[7] %}
                 <img src="{{ url_for('static', filename=ticket[7]) }}" style="max-height:100px;">

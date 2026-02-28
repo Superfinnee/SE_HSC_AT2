@@ -1,16 +1,45 @@
-from flask import Flask, render_template, redirect, request, session, flash
+from webbrowser import get
+
+from flask import Flask, render_template, redirect, request, session, flash, url_for
 import sqlite3, os
+import werkzeug
 from werkzeug.security import generate_password_hash, check_password_hash
 from uuid import uuid4
 from markupsafe import escape 
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from datetime import timedelta
+
+
+
 
 
 
 app = Flask(__name__)
+
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=30)
+
+app.config.update(
+    SESSION_COOKIE_SECURE=True, # Enforces HTTPS for session cookies
+    SESSION_COOKIE_HTTPONLY=True, # Prevents client-side JS from accessing session cookies
+    SESSION_COOKIE_SAMESITE='Strict' # Prevents cross-site request forgery (CSRF)
+)
+
+@app.before_request
+def enforce_https():
+    if not request.is_secure:
+        return redirect(request.url.replace('http://', 'https://'))
+        
+    
+def make_session_permanent():
+    session.permanent = True
+
 app.secret_key = 'AP_Fp3279Fp'
 UPLOAD_FOLDER = os.path.join('static', 'uploads')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 priorities = ['Low', 'Medium', 'High']
+
+limiter = Limiter(get_remote_address, app=app, default_limits=["5 per minute"])
 
 
 
@@ -71,12 +100,21 @@ def returnAdmin():
 @app.route("/register", methods=["GET", "POST"])
 def register():
     if request.method == 'POST':
-        fName = escape(request.form['fName'])
-        lName = escape(request.form['lName'])
-        email = escape(request.form['email'])
-        username = escape(request.form['username'])
-        password = escape(request.form['password'])
-        hashedPassword = generate_password_hash(password)
+        try:
+            fName = escape(request.form['fName'])
+            lName = escape(request.form['lName'])
+            email = escape(request.form['email'])
+            username = escape(request.form['username'])
+            password = escape(request.form['password'])
+            hashedPassword = generate_password_hash(password)
+        except werkzeug.exceptions.BadRequestKeyError: # type: ignore
+            flash(f'We detected an error, please try again', 'error')
+            return redirect('/register')
+        
+        if not fName or not lName or not email or not username or not password:
+            flash('Please fill in all fields.', 'error')
+            return redirect('/register')
+        
         conn = sqlite3.connect('piccoliTicketi.db')
         cursor = conn.cursor()
         #Check if username already exists
@@ -97,10 +135,14 @@ def register():
     return render_template('register.html')
 
 @app.route('/login', methods=["GET", "POST"])
+@limiter.limit("5 per minute")
 def login():
     if request.method == "POST":
         username = escape(request.form['username'])
         password = escape(request.form['password'])
+        if not username or not password:
+            flash('Please fill in all fields.', 'error')
+            return redirect('/login')
         conn = sqlite3.connect('piccoliTicketi.db')
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
@@ -110,6 +152,7 @@ def login():
         if user and check_password_hash(user[5], password):
             session['userID'] = user[0]
             session['username'] = user[4]
+            session['csrfToken'] = str(uuid4())
             flash('Login successful!', 'success')
             return redirect('/')
         flash ("Invalid username or password", "error")
@@ -155,6 +198,10 @@ def createTicket():
             savePath = os.path.join(UPLOAD_FOLDER, uniqueName)
             file.save(savePath)
             imagePath = f"uploads/{uniqueName}"
+        
+        if title == "" or description == "":
+            flash("Please fill in all required fields.", "error")
+            return redirect('/createTicket')
         
         conn = sqlite3.connect('piccoliTicketi.db')
         cursor = conn.cursor()
@@ -241,6 +288,9 @@ def saveItem():
         itemID = request.form.get("editIndex") 
         newTitle = escape(request.form.get("newItem"))
         newDescription = escape(request.form.get("newDescription"))
+        if not newTitle or not newDescription:
+            flash("Please fill in all fields.", "error")
+            return redirect('/editItem')
         cursor.execute("UPDATE tickets SET title = ?, description = ? WHERE ID = ?",(newTitle, newDescription, itemID))
         conn.commit()
     elif userStatus and userStatus[0] == 'admin':
@@ -249,6 +299,9 @@ def saveItem():
         newDescription = escape(request.form.get("newDescription"))
         newStatus = escape(request.form.get("newStatus"))
         newPriority = escape(request.form.get("newPriority"))
+        if not newTitle or not newDescription or not newStatus or not newPriority:
+            flash("Please fill in all fields.", "error")
+            return redirect('/editItem')
         cursor.execute("UPDATE tickets SET title = ?, description = ?, status = ?, priority = ? WHERE ID = ?",(newTitle, newDescription, newStatus, newPriority, itemID))
         conn.commit()
     
@@ -287,4 +340,5 @@ def admin():
     return render_template("admin.html", tickets=tickets)
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, ssl_context=("C:\\Users\\piccolif26\\OneDrive\\Documents\\12SE_Web_Dev\\SE_HSC_AT2\\localhost+3.pem", "C:\\Users\\piccolif26\\OneDrive\\Documents\\12SE_Web_Dev\\SE_HSC_AT2\\localhost+3-key.pem"))
+    
