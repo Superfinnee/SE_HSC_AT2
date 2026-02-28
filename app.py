@@ -9,16 +9,13 @@ from markupsafe import escape
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from datetime import timedelta
-
-
-
-
-
+from bleach import clean
+from flask_wtf.csrf import CSRFProtect
 
 app = Flask(__name__)
 
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=30)
-
+csrf = CSRFProtect(app)
 app.config.update(
     SESSION_COOKIE_SECURE=True, # Enforces HTTPS for session cookies
     SESSION_COOKIE_HTTPONLY=True, # Prevents client-side JS from accessing session cookies
@@ -135,7 +132,7 @@ def register():
     return render_template('register.html')
 
 @app.route('/login', methods=["GET", "POST"])
-@limiter.limit("5 per minute")
+#@limiter.limit("5 per minute") ---------------------------------- Implemented in the Limiter initialization, not here to avoid interfering with testing and development
 def login():
     if request.method == "POST":
         username = escape(request.form['username'])
@@ -313,7 +310,7 @@ def saveItem():
     #edit_Index = None
     return returnAdmin()
 
-@app.route("/solve_item", methods=["GET", "POST"])
+@app.route("/solve_item", methods=["POST"])
 def solve_item():
     itemID = request.form.get("solve")
     conn = sqlite3.connect('piccoliTicketi.db')

@@ -1,9 +1,7 @@
 {% extends "layout.html" %}
 
 {% block body %}
-    <div class="buttonsContainer">
-        <a href="/createTicket">Create New Ticket</a>
-        <a href="/logout">Logout</a>
+    
     </div>
 
     <table class="tickets">
@@ -23,6 +21,7 @@
         {% if ticket[0] == editIndex %}
             <!--------------------------------For when the list is in edit mode------------------------------------>
                 <form action="{{ url_for('saveItem') }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <!--Change title-->
                         <td>
                             <input type="hidden" name="editIndex" value="{{ ticket[0] | safe }}">
@@ -52,12 +51,14 @@
                 <!--Delete Button-->
                     <td class="delete">
                         <form action="{{ url_for('delete_item') }}" method="POST">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <input type="hidden" name="delete" value="{{ ticket[0] }}">
                             <button class="delete-btn" title="Delete">&#128465;</button>
                         </form>
                     </td>
                 <!--Solve Button-->
                     <td class="solve">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <form action="{{ url_for('solve_item') }}" method="POST">
                             <input type="hidden" name="solve" value="{{ ticket[0] }}">
                             <button class="solve-btn" title="Solve">&#10004;</button>
@@ -79,6 +80,7 @@
                 <!--Edit Button-->
                     <td class="edit">
                         <form action="{{ url_for('editItem') }}" method="POST">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <input type="hidden" name="edit" value="{{ ticket[0] }}">
                             <button class="edit-btn" title="Edit">&#9998;</button>
                         </form>
@@ -86,6 +88,7 @@
                 <!--Close Button-->
                     <td class="delete">
                         <form action="{{ url_for('delete_item') }}" method="POST">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <input type="hidden" name="delete" value="{{ ticket[0] }}">
                             <button class="delete-btn" title="Delete">&#128465;</button>
                         </form>
@@ -93,6 +96,7 @@
                 <!--Solve Button-->
                     <td class="solve">
                         <form action="{{ url_for('solve_item') }}" method="POST">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <input type="hidden" name="solve" value="{{ ticket[0] }}">
                             <button class="solve-btn" title="Solve">&#10004;</button>
                         </form>
