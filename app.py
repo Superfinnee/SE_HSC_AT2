@@ -161,16 +161,17 @@ def logout():
     flash('You have been logged out.', 'success')
     return redirect('/login')
 
-#To create a new admin user, paste <a href="/admin">admin</a> in the index.html file and click it once while logged in as the user you want to make admin.
-#Also unccoment below:
-'''@app.route("/admin")
-def admin():
-    conn = sqlite3.connect('piccoliTicketi.db')
-    cursor = conn.cursor()
-    cursor.execute("UPDATE users SET status = 'admin' WHERE username = ?", (session['username'],))
-    conn.commit()
-    conn.close()
-    return redirect('/')'''
+@app.route("/createAdmin", methods=["GET", "POST"])
+def createAdmin():
+    if request.method == "POST":
+        conn = sqlite3.connect('piccoliTicketi.db')
+        cursor = conn.cursor()
+        user = request.form.get('username')
+        cursor.execute("UPDATE users SET status = 'admin' WHERE username = ?", (user,))
+        conn.commit()
+        conn.close()
+        return redirect('/admin')
+    return render_template('createAdmin.html')
 
 @app.route('/createTicket', methods=["GET", "POST"])
 def createTicket():

@@ -1,0 +1,31 @@
+{% extends "layout.html" %}
+
+{% block body %}
+
+<div class="logoutContainer">
+    <form action="{{ url_for('logout') }}" method="get" style="display: inline;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit">Logout</button>
+    </form>
+    <form action="/createTicket" method="get" style="display: inline;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit">Create Ticket</button>
+    </form>
+    <form action="createAdmin" method="get" style="display: inline;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit">Create a new Admin</button>
+</div>
+
+<h1>Create A New Admin</h1>
+<form method="POST" action="/createAdmin">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <p>Enter the username of the account you want to make an admin below.</p>
+    <input name="username" placeholder="Username" type="text" required>
+    <button type="submit">Create Admin</button>
+</form>
+
+<form action="/" method="get">
+    <button type="submit">Back to Dashboard</button>
+</form>
+
+{% endblock %}

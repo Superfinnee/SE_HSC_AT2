@@ -2,6 +2,18 @@
 
 {% block body %}
 
+    <div class="logoutContainer">
+        <form action="{{ url_for('logout') }}" method="get" style="display: inline;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit">Logout</button>
+        </form>
+        <form action="/createTicket" method="get" style="display: inline;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit">Create Ticket</button>
+        </form>
+    </div>
+
+
 <table class="tickets">
     <tr>
         <th>Title</th>
