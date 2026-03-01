@@ -23,9 +23,27 @@
     <input name="username" placeholder="Username" type="text" required>
     <button type="submit">Create Admin</button>
 </form>
-
+<br><br>
 <form action="/" method="get">
     <button type="submit">Back to Dashboard</button>
 </form>
+<br><br>
+{% if username == "SuperFinnee" %}
+<h2>Super Admin Controls</h2>
+<h3> Delete Admin</h3>
+    <form action="{{ url_for('deleteAdmin') }}" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <p>Enter the username of the admin you want to delete below.</p>
+        <input name="username" placeholder="Username" type="text" required>
+        <button type="submit">Delete Admin</button>
+    </form>
+    <h3> Delete User</h3>
+    <form action="{{ url_for('deleteUser') }}" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <p>Enter the username of the user you want to delete below. Be careful, this action is irreversible.</p>
+        <input name="username" placeholder="Username" type="text" required>
+        <button type="submit">Delete User</button>
+    </form>
+{% endif %}
 
 {% endblock %}
