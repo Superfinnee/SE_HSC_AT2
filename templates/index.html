@@ -49,7 +49,7 @@
         <td>{{ ticket[4] | safe }}</td>
         <td>
         {% if ticket[7] %}
-                <img src="{{ url_for('static', filename=ticket[7]) }}" style="max-height:100px;">
+                <img src="{{ url_for('static', filename=ticket[7]) }}" style="max-height:100px;" alt="Ticket Attachment">
         {% endif %}
         </td>
 
@@ -86,7 +86,7 @@
         <td>{{ ticket[4] | safe }}</td>
         <td>
             {% if ticket[7] %}
-                <img src="{{ url_for('static', filename=ticket[7]) }}" style="max-height:100px;">
+                <img src="{{ url_for('static', filename=ticket[7]) }}" style="max-height:100px;" alt="Ticket Attachment">
             {% endif %}
         </td>
         

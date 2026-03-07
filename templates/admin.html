@@ -79,7 +79,7 @@
                 <!--Image-->
                     <td>
                         {% if ticket[7] %}
-                            <img src="{{ url_for('static', filename=ticket[7]) }}" style="max-height:100px;">
+                            <img src="{{ url_for('static', filename=ticket[7]) }}" style="max-height:100px;" alt="Ticket Attachment">
                         {% endif %}
                     </td>
             <!-----------------------End of edit mode------------------>
@@ -116,7 +116,7 @@
                 <!--Image-->
                     <td>
                         {% if ticket[7] %}
-                            <img src="{{ url_for('static', filename=ticket[7]) }}" style="height:200px;">
+                            <img src="{{ url_for('static', filename=ticket[7]) }}" style="height:200px;" alt="Ticket Attachment">
                         {% endif %}
                     </td>
                 {% endif %}
