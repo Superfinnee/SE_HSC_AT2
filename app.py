@@ -233,6 +233,30 @@ def delete_item():
     returnAdmin()
     return redirect("/")
 
+@app.route("/undoDelete", methods=["POST"])
+def undoDelete():
+    conn = sqlite3.connect('piccoliTicketi.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT status FROM users WHERE id = ?", (session['userID'],))
+    userStatus = cursor.fetchone()
+    if userStatus and userStatus[0] == 'admin':
+        cursor.execute("SELECT * FROM closedTickets ORDER BY id DESC LIMIT 1")
+        item = cursor.fetchone()
+        cursor.execute("INSERT INTO tickets (userID, title, description, status, priority, created_at, imagePath) VALUES (?, ?, ?, ?, ?, ?, ?)", (item[1], item[2], item[3], "open", item[5], item[6], item[7]))
+        conn.commit()
+        cursor.execute("DELETE FROM closedTickets WHERE ID = ?", (item[0],))
+        conn.commit()
+        conn.close()
+        return redirect("/admin")
+    itemID = request.form.get("undo")
+    cursor.execute("SELECT * FROM closedTickets WHERE ID = ?", (itemID,))
+    item = cursor.fetchone()
+    cursor.execute("INSERT INTO tickets (userID, title, description, status, priority, created_at, imagePath) VALUES (?, ?, ?, ?, ?, ?, ?)", (item[1], item[2], item[3], "open", item[5], item[6], item[7]))
+    conn.commit()
+    cursor.execute("DELETE FROM closedTickets WHERE ID = ?", (itemID,))
+    conn.commit()
+    conn.close()
+    return returnAdmin()
 
 @app.route("/editItem", methods=["POST"])
 def editItem():
@@ -331,8 +355,8 @@ def deleteAdmin():
     conn = sqlite3.connect('piccoliTicketi.db')
     cursor = conn.cursor()
     cursor.execute("SELECT username FROM users WHERE id = ?", (session['userID'],))
-    username = cursor.fetchone()
-    if not username or username[0] != 'SuperFinnee':
+    operatorUsername = cursor.fetchone()
+    if not operatorUsername or operatorUsername[0] != 'SuperFinnee':
         conn.close()
         flash("You do not have permission to perform this action.", "error")
         return redirect('/')

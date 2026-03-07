@@ -64,9 +64,13 @@
                 <input type="hidden" name="edit" value="{{ ticket[0] }}">
                 <button class="edit-btn" title="Edit">&#9998;</button>
             </form>
-        {% else %}
-        &#9998;
-        {% endif %}
+            {% else %}
+            <form action="{{ url_for('undoDelete') }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="undo" value="{{ ticket[0] }}">
+                <button class="edit-btn" title="Undo Delete">&#8630;</button>
+            </form>
+            {% endif %}
         </td>
          <td class="delete">
             {% if ticket[4] != "Closed" and ticket[4] != "Solved"%}
