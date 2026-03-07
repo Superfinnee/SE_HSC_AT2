@@ -119,7 +119,7 @@ def register():
         userExists = cursor.fetchone()[0] > 0
         
         if userExists:
-            flash('Username already exists.', 'error')
+            flash('Username already exists, Please choose another.', 'error')
         else:
             #Insert new user
             cursor.execute('INSERT INTO users (fName, lName, email, username, password) values (?, ?, ?, ?, ?)', (fName, lName, email, username, hashedPassword))
@@ -247,6 +247,7 @@ def editItem():
     cursor = conn.cursor()
     cursor.execute("SELECT status FROM users WHERE id = ?", (session['userID'],))
     userStatus = cursor.fetchone()
+    conn.close()
     if userStatus and userStatus[0] == 'admin':
         return render_template('admin.html', tickets=tickets, editIndex=editID, priority=priorities)
     return render_template("index.html", tickets=tickets, editIndex=editID)
@@ -279,13 +280,8 @@ def saveItem():
             return redirect('/editItem')
         cursor.execute("UPDATE tickets SET title = ?, description = ?, status = ?, priority = ? WHERE ID = ?",(newTitle, newDescription, newStatus, newPriority, itemID))
         conn.commit()
-    
-    #toDoList[recordIndex]["item"] = newItem
-    #toDoList[recordIndex]["priority"] = newPriority
-    
+        
     conn.close()
-    
-    #edit_Index = None
     return returnAdmin()
 
 @app.route("/solve_item", methods=["POST"])
@@ -293,6 +289,12 @@ def solve_item():
     itemID = request.form.get("solve")
     conn = sqlite3.connect('piccoliTicketi.db')
     cursor = conn.cursor()
+    cursor.execute("SELECT status FROM users WHERE id = ?", (session['userID'],))
+    userStatus = cursor.fetchone()
+    if userStatus and userStatus[0] != 'admin':
+        flash("You do not have permission to perform this action.", "error")
+        conn.close()
+        return redirect('/')
     cursor.execute("SELECT * FROM tickets WHERE ID = ?", (itemID,))
     item = cursor.fetchone()
     cursor.execute("INSERT INTO closedTickets (userID, title, description, status, priority, created_at, imagePath) VALUES (?, ?, ?, ?, ?, ?, ?)", (item[1], item[2], item[3], "Solved", item[5], item[6], item[7]))
@@ -328,6 +330,12 @@ def deleteAdmin():
         return redirect('/admin')
     conn = sqlite3.connect('piccoliTicketi.db')
     cursor = conn.cursor()
+    cursor.execute("SELECT username FROM users WHERE id = ?", (session['userID'],))
+    username = cursor.fetchone()
+    if not username or username[0] != 'SuperFinnee':
+        conn.close()
+        flash("You do not have permission to perform this action.", "error")
+        return redirect('/')
     cursor.execute("UPDATE users SET status = 'user' WHERE username = ?", (username,))
     conn.commit()
     conn.close()
@@ -335,26 +343,40 @@ def deleteAdmin():
 
 @app.route("/deleteUser", methods=["POST"])
 def deleteUser():
-    userID = request.form.get("username")
+    username = request.form.get("username")
+    if username == "SuperFinnee":
+        flash("Let's not do this one again. It was embarrasing the first time.", "error")
+        return redirect('/admin')
     conn = sqlite3.connect('piccoliTicketi.db')
     cursor = conn.cursor()
-    cursor.execute("DELETE FROM users WHERE username = ?", (userID,))
+    cursor.execute("SELECT username FROM users WHERE id = ?", (session['userID'],))
+    usernameSQL = cursor.fetchone()
+    if not usernameSQL or usernameSQL[0] != 'SuperFinnee':
+        conn.close()
+        flash("You do not have permission to perform this action.", "error")
+        return redirect('/')
+    cursor.execute("DELETE FROM users WHERE username = ?", (username,))
     conn.commit()
     conn.close()
+    flash(f'User {username} has been deleted.', 'success') 
     return redirect('/admin')
 
 @app.route("/createAdmin", methods=["GET", "POST"])
 def createAdmin():
+    conn = sqlite3.connect('piccoliTicketi.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT status FROM users WHERE id = ?", (session['userID'],))
+    userStatus = cursor.fetchone()
+    if not userStatus or userStatus[0] != 'admin':
+        conn.close()
+        flash("You do not have permission to acess this page.", "error")
+        return redirect('/')
     if request.method == "POST":
-        conn = sqlite3.connect('piccoliTicketi.db')
-        cursor = conn.cursor()
         user = request.form.get('username')
         cursor.execute("UPDATE users SET status = 'admin' WHERE username = ?", (user,))
         conn.commit()
         conn.close()
         return redirect('/admin')
-    conn = sqlite3.connect('piccoliTicketi.db')
-    cursor = conn.cursor()
     cursor.execute("SELECT username FROM users WHERE id = ?", (session['userID'],))
     username = cursor.fetchone()
     conn.close()
