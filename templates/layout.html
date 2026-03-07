@@ -2,7 +2,7 @@
 <html lang="en">
     <head>
         <meta charset="UTF-8">
-        <meta name="viewport" content="initial-scale=1, width-device-width">
+        <meta name="viewport" content="initial-scale=1, width=device-width">
         <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
         <Title>Piccoli Ticketi</Title>
     </head>
@@ -14,11 +14,13 @@
                 {% for category, message in messages %}
                 <p class="{{ category }}">{{ message }}</p>
                 {% endfor %}
+            </div>
             {% endif %}
             {% endwith %}
-            </div>
+        </div>
         {% block body%}
         {% endblock %}
-        </div>
+        <br><br><br>
+        
     </body>
 </html>

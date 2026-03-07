@@ -1,71 +1,337 @@
-:root {
-    --Honeydew: #D9E5D6; /* Sidebar - Use black for buttons */
-    --Fresh-sky: #00A7E1;
-    --Vanilla-Custard: #EDDEA4; /* Main background */
-    --Tangerine-Dream: #F7A072; /* Hover buttons */
-    --Sandy-Brown: #FF9B42; /* Buttons */
-    --Space-Indigo: #2E2D4D; /* Possible Text color */
-    --Shadow-Grey: #171727; /* Possible Text color */
-    background-color: var(--Vanilla-Custard);
-    color: var(--Space-Indigo);
-    font-family: Arial, Helvetica, sans-serif;
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* ============================================================
+   BASE & TYPOGRAPHY
+   Global resets and font settings applied across all pages
+   ============================================================ */
+
+body {
+    font-family: 'Inter', Arial, sans-serif; /* Inter for modern readability, Arial as fallback */
+    background-color: #f4f6f9;              /* Soft off-white background to reduce eye strain */
+    color: #333;
+    margin: 0;
+    padding: 0;
 }
 
-button {
-    border: 1px solid var(--Space-Indigo);
-    padding: 8px;
+h1, h2, h3, h4, label, p {
+    text-align: center;   /* Centre all headings and form labels across the app */
+    align-items: center;
+}
+
+label {
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+
+/* ============================================================
+   LAYOUT
+   Page-level structural containers
+   ============================================================ */
+
+.wrapper {
+    max-width: 960px;    /* Cap content width on very large screens */
+    margin: 40px auto;   /* Centre the wrapper horizontally with top spacing */
+    padding: 0 20px;     /* Side padding to prevent content touching screen edges */
+}
+
+.tickets-container {
+    overflow-x: auto;    /* Allows horizontal scrolling on small screens instead of breaking layout */
+    width: 100%;
+}
+
+
+/* ============================================================
+   NAVIGATION BAR
+   The top action bar containing Logout, Create Ticket, etc.
+   ============================================================ */
+
+.logoutContainer {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;        /* Wrap buttons onto next line on narrow screens */
+    gap: 10px;
+    padding: 12px 16px;
+    margin-bottom: 20px;
+    background-color: white;
+    border-bottom: 1px solid #ddd;
+    align-items: center;
+}
+
+/* Override the global form card styles for forms inside the nav bar */
+.logoutContainer form {
+    display: inline;
+    margin: 0;
+    padding: 0;
+}
+
+.logoutContainer button {
+    padding: 8px 16px;
     border-radius: 4px;
-    width: 250px;
-    box-sizing: border-box;
-    color: var(--Space-Indigo);
-    background-color: var(--Sandy-Brown); 
-    cursor: pointer; 
-    transition: background-color 0.3s ease;
-    /*
-    background-color: var(--Sandy-Brown);
-    border: solid 1px black;
-    padding: 2px 68px;
+    border: 1px solid #ccc;
+    background: #4a90d9;
+    color: white;
     cursor: pointer;
-    transition: background-color 0.3s ease;
-    border-radius: 4px;,
-    color: var(--Space-Indigo);*/
-}
-button:hover {
-    background-color: var(--Tangerine-Dream);
+    white-space: nowrap;   /* Prevent button text from wrapping mid-word */
+    font-size: 0.9rem;
 }
 
-a {
-    background-color: var(--Sandy-Brown);
-    color: black;
-    border: solid 1px black;
-    padding: 1px 15px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-    border-radius: 4px;
-    color: var(--Space-Indigo);
-    text-decoration: none;
-}
-a:hover {
-    background-color: var(--Tangerine-Dream);
+.logoutContainer button:hover {
+    background-color: #e8eef7;
 }
 
-input[type="text"], input[type="password"], input[type="email"] {
-    border: 1px solid var(--Space-Indigo);
-    padding: 8px;
+
+/* ============================================================
+   FORMS
+   Styles for login, register, createTicket, createAdmin pages
+   ============================================================ */
+
+/* Reset all forms globally — prevents card styles leaking into table action forms */
+form {
+    background: none;
+    padding: 0;
+    border-radius: 0;
+    box-shadow: none;
+    max-width: none;
+    margin: 0;
+}
+
+/* Card container for standalone forms (login, register, createAdmin) */
+.formCard {
+    background: white;
+    padding: 24px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1); /* Subtle shadow to lift the card off the background */
+    max-width: 400px;
+    margin: 0 auto;                         /* Centre the card on the page */
+}
+
+.formCard button[type="submit"] {
+    width: 100%;   /* Full-width submit button inside form cards only */
+}
+
+/* Standard text inputs, password fields, email fields and textareas */
+input[type="text"],
+input[type="password"],
+input[type="email"],
+textarea {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    margin: 8px 0 16px 0;
+    border: 1px solid #ccc;
     border-radius: 4px;
-    width: 250px;
+    box-sizing: border-box; /* Include padding in width calculation so inputs don't overflow their container */
+}
+
+/* Override input width inside table cells so edit-mode inputs don't stretch the column */
+td input[type="text"] {
+    width: auto;
+    display: inline;
+    padding: 6px;
+    margin: 0;
     box-sizing: border-box;
 }
 
-.error{
-    color:#721c24;
-    background-color:#f8d7da;
-    text-align: center;
-    border-radius: 5px;
+/* Override form styles inside table cells to prevent action button forms from taking up space */
+td form {
+    display: inline;
+    width: auto;
+    margin: 0;
+    padding: 0;
 }
-.success{
-    color:#155724;
-    background-color:#d4edda;
+
+/* Inline forms inside table action cells (edit, delete, solve buttons) */
+.actionButton {
+    display: inline;
+    margin: 0;
+    padding: 0;
+}
+
+/* Utility class for standalone input controls (e.g. in createAdmin) */
+.control {
+    padding: 10px;
+    margin: 8px 0 16px 0;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+
+/* ============================================================
+   BUTTONS
+   Global submit button styles — nav bar buttons override these
+   ============================================================ */
+
+button[type="submit"] {
+    background-color: #4a90d9;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+button[type="submit"]:hover {
+    background-color: #357abd;
+}
+
+
+/* ============================================================
+   FLASH MESSAGES
+   Success and error notification banners shown after actions
+   ============================================================ */
+
+.flash-messages {
+    margin-bottom: 20px;
+}
+
+.error, .success {
+    padding: 12px 16px;
+    border-radius: 6px;
+    margin-bottom: 10px;
+    font-weight: 500;
+}
+
+.error {
+    color: #721c24;
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+}
+
+.success {
+    color: #155724;
+    background-color: #d4edda;
+    border: 1px solid #c3e6cb;
+}
+
+
+/* ============================================================
+   TICKET TABLE
+   Styles for the main ticket list on both user and admin views
+   ============================================================ */
+
+/* Generic table reset for any non-ticket tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    border-color: chocolate;
+    border: solid 1px;
+}
+
+table.tickets {
+    table-layout: fixed;  /* Enforces column widths — without this, browser ignores width hints */
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 600px;     /* Prevent table from collapsing below a readable width */
+}
+
+table.tickets th,
+table.tickets td {
+    padding: 10px 0;
     text-align: center;
-    border-radius: 5px;
+    border-bottom: 1px solid #ddd;
+    border-left: 1px solid #ddd;
+    overflow: hidden;           /* Clip content that exceeds cell width */
+    text-overflow: ellipsis;    /* Show "..." when text is clipped */
+    white-space: nowrap;
+}
+
+table.tickets tr:hover {
+    background-color: #f1f5fb;  /* Subtle row highlight for easier scanning */
+}
+
+/* Ticket images — scale with column width while preserving aspect ratio */
+table.tickets td img {
+    width: 100%;
+    max-width: 100%;
+    height: auto;       /* Let height scale proportionally to width */
+    display: block;
+    margin: 0 auto;
+}
+
+/* --- Column widths (desktop) --- */
+table.tickets th:nth-child(1),
+table.tickets td:nth-child(1) { width: 20%; } /* Title */
+
+table.tickets th:nth-child(2),
+table.tickets td:nth-child(2) { width: 25%; } /* Description */
+
+table.tickets th:nth-child(3),
+table.tickets td:nth-child(3) { width: 10%; } /* Status */
+
+table.tickets th:nth-child(4),
+table.tickets td:nth-child(4) { width: 10%; } /* Priority */
+
+/* Action columns (Edit / Close / Solve) — kept narrow since they only hold icon buttons */
+table.tickets th:nth-child(5),
+table.tickets td:nth-child(5),
+table.tickets th:nth-child(6),
+table.tickets td:nth-child(6),
+table.tickets th:nth-child(7),
+table.tickets td:nth-child(7) { width: 5%; }
+
+table.tickets th:nth-child(8),
+table.tickets td:nth-child(8) {
+    width: 15%;
+    max-width: 150px;  /* Image column — capped to prevent oversized images dominating */
+}
+
+/* --- Ticket status row colours --- */
+
+/* Closed tickets are dimmed to indicate they are no longer active */
+tr.status-closed {
+    opacity: 0.6;
+    background-color: #f8f9fa;
+}
+
+/* Solved tickets are highlighted green to distinguish from closed */
+tr.status-solved {
+    background-color: #d4edda;
+}
+
+
+/* ============================================================
+   RESPONSIVE — SMALL SCREENS (max 872px)
+   Adjustments for tablets and mobile devices
+   ============================================================ */
+
+@media (max-width: 872px) {
+
+    /* Shrink action columns to icon-only width on small screens */
+    table.tickets th:nth-child(5),
+    table.tickets td:nth-child(5),
+    table.tickets th:nth-child(6),
+    table.tickets td:nth-child(6),
+    table.tickets th:nth-child(7),
+    table.tickets td:nth-child(7) {
+        width: 36px;
+        padding: 6px 2px;
+    }
+
+    /* Hide image column on mobile — images are supplementary detail */
+    table.tickets th:nth-child(8),
+    table.tickets td:nth-child(8) {
+        display: none;
+    }
+
+    /* Redistribute freed space to content columns */
+    table.tickets th:nth-child(1),
+    table.tickets td:nth-child(1) { width: 25%; }
+
+    table.tickets th:nth-child(2),
+    table.tickets td:nth-child(2) { width: 30%; }
+
+    table.tickets th:nth-child(3),
+    table.tickets td:nth-child(3),
+    table.tickets th:nth-child(4),
+    table.tickets td:nth-child(4) { width: 12%; }
+
+    /* Reduce font size and padding so rows remain compact on small screens */
+    table.tickets th,
+    table.tickets td {
+        font-size: 0.8rem;
+        padding: 8px 4px;
+    }
 }

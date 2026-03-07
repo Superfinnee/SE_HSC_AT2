@@ -2,20 +2,28 @@
 
 {% block body %}
     <div class="logoutContainer">
-        <form action="{{ url_for('logout') }}" method="get" style="display: inline;">
+        <form action="{{ url_for('logout') }}" method="get">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit">Logout</button>
         </form>
-        <form action="/createTicket" method="get" style="display: inline;">
+        <form action="/createTicket" method="get">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit">Create Ticket</button>
         </form>
-        <form action="createAdmin" method="get" style="display: inline;">
+        <form action="createAdmin" method="get">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit">Create a new Admin</button>
         </form>
+        <form class="undoButton" action="{{ url_for("undoDelete") }}" method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="undo-btn" title="Undo Delete">Undo Delete</button>
+        </form>
     </div>
 
+    
+    <h1>Welcome, {{ name }}!</h1>
+    
+<div class="tickets-container">
     <table class="tickets">
         <tr>
             <th>Title</th>
@@ -62,7 +70,7 @@
                             </form>
                 <!--Delete Button-->
                     <td class="delete">
-                        <form action="{{ url_for('delete_item') }}" method="POST">
+                        <form class="actionButton" action="{{ url_for('delete_item') }}" method="POST">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <input type="hidden" name="delete" value="{{ ticket[0] }}">
                             <button class="delete-btn" title="Delete">&#128465;</button>
@@ -70,7 +78,7 @@
                     </td>
                 <!--Solve Button-->
                     <td class="solve">
-                        <form action="{{ url_for('solve_item') }}" method="POST">
+                        <form class="actionButton" action="{{ url_for('solve_item') }}" method="POST">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <input type="hidden" name="solve" value="{{ ticket[0] }}">
                             <button class="solve-btn" title="Solve">&#10004;</button>
@@ -79,7 +87,7 @@
                 <!--Image-->
                     <td>
                         {% if ticket[7] %}
-                            <img src="{{ url_for('static', filename=ticket[7]) }}" style="max-height:100px;" alt="Ticket Attachment">
+                            <img src="{{ url_for('static', filename=ticket[7]) }}" alt="Ticket Attachment">
                         {% endif %}
                     </td>
             <!-----------------------End of edit mode------------------>
@@ -91,7 +99,7 @@
                     <td>{{ ticket[5] | safe}}</td>
                 <!--Edit Button-->
                     <td class="edit">
-                        <form action="{{ url_for('editItem') }}" method="POST">
+                        <form class="actionButton" action="{{ url_for('editItem') }}" method="POST">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <input type="hidden" name="edit" value="{{ ticket[0] }}">
                             <button class="edit-btn" title="Edit">&#9998;</button>
@@ -99,24 +107,24 @@
                     </td>
                 <!--Close Button-->
                     <td class="delete">
-                        <form action="{{ url_for('delete_item') }}" method="POST">
+                        <form class="actionButton" action="{{ url_for('delete_item') }}" method="POST">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <input type="hidden" name="delete" value="{{ ticket[0] }}">
-                            <button class="delete-btn" title="Delete">&#128465;</button>
+                            <button class="delete-btn" title="Delete" onclick="return confirm('Are you sure you want to close this ticket?')">&#128465;</button>
                         </form>
                     </td>
                 <!--Solve Button-->
                     <td class="solve">
-                        <form action="{{ url_for('solve_item') }}" method="POST">
+                        <form class="actionButton" action="{{ url_for('solve_item') }}" method="POST">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <input type="hidden" name="solve" value="{{ ticket[0] }}">
-                            <button class="solve-btn" title="Solve">&#10004;</button>
+                            <button class="solve-btn" title="Solve" onclick="return confirm('Are you sure you want to mark this ticket as solved?')">&#10004;</button>
                         </form>
                     </td>
                 <!--Image-->
                     <td>
                         {% if ticket[7] %}
-                            <img src="{{ url_for('static', filename=ticket[7]) }}" style="height:200px;" alt="Ticket Attachment">
+                            <img src="{{ url_for('static', filename=ticket[7]) }}" alt="Ticket Attachment">
                         {% endif %}
                     </td>
                 {% endif %}
@@ -124,9 +132,6 @@
         </tr>
         {% endfor %}
     </table>
-    <form action="{{ url_for("undoDelete") }}" method="POST">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <button type="submit" class="undo-btn" title="Undo Delete">Undo Delete</button>
-    </form>
+</div>
 
 {% endblock %}

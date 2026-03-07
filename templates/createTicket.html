@@ -2,26 +2,30 @@
 
 {% block body %}
     <div class="logoutContainer">
-        <form action="{{ url_for('logout') }}" method="get" style="display: inline;">
+        <form action="{{ url_for('logout') }}" method="get">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit">Logout</button>
         </form>
+        <form action="/" method="get">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit">Back to Dashboard</button>
+        </form>
     </div>
     <h1>Create New Ticket</h1>
-    <form method="POST" action="/createTicket" enctype="multipart/form-data">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <label for="title">Title:</label>
-        <input type="text" id="title" name="title" placeholder="Title" required><br><br>
+    <div class="formCard">
+        <form method="POST" action="/createTicket" enctype="multipart/form-data">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <label for="title">Title:</label>
+            <input type="text" id="title" name="title" placeholder="Title" required><br><br>
 
-        <label for="description">Description:</label>
-        <textarea id="description" name="description" placeholder="Describe your issue" required></textarea><br><br>
+            <label for="description">Description:</label>
+            <textarea id="description" name="description" placeholder="Describe your issue" required></textarea><br><br>
 
-        <label for="attachment">Upload a screenshot (optional):</label>
-        <input type="file" id="attachment" name="attachment" accept="image/*"><br><br>
+            <label for="attachment">Upload a screenshot (optional):</label>
+            <input type="file" id="attachment" name="attachment" accept="image/*"><br><br>
 
-        <button type="submit">Create Ticket</button>
-    </form>
-    <form action="/" method="get">
-        <button type="submit">Back to Dashboard</button>
-    </form>
+            <button type="submit">Create Ticket</button>
+        </form>
+    </div>
+    
 {% endblock %}

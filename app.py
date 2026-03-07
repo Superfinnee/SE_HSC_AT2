@@ -145,12 +145,17 @@ def login():
         cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
         user = cursor.fetchone()
         print(user)
-        conn.close()
         if user and check_password_hash(user[5], password):
             session['userID'] = user[0]
             session['username'] = user[4]
             session['csrfToken'] = str(uuid4())
             flash('Login successful!', 'success')
+            cursor.execute("SELECT status FROM users WHERE id = ?", (session['userID'],))
+            userStatus = cursor.fetchone()
+            if userStatus and userStatus[0] == 'admin':
+                conn.close()
+                return redirect('/admin')
+            conn.close()
             return redirect('/')
         flash ("Invalid username or password", "error")
     return render_template('login.html')
@@ -214,13 +219,15 @@ def index():
     ticketsList = cursor.fetchall()
     cursor.execute("SELECT * FROM closedTickets WHERE userID = ?", (session['userID'],))
     ticketsList += cursor.fetchall()
+    cursor.execute("SELECT fname FROM users WHERE id = ?", (session['userID'],))
+    userName = cursor.fetchone()
     conn.close()
-    return render_template("index.html", tickets=ticketsList)
+    return render_template("index.html", tickets=ticketsList, name=userName[0] if userName else "User")
 
 @app.route("/delete_item", methods=["POST"])
 def delete_item():
     
-    itemID = request.form.get("delete")
+    itemID = escape(request.form.get("delete"))
     conn = sqlite3.connect('piccoliTicketi.db')
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM tickets WHERE ID = ?", (itemID,))
@@ -248,7 +255,7 @@ def undoDelete():
         conn.commit()
         conn.close()
         return redirect("/admin")
-    itemID = request.form.get("undo")
+    itemID = escape(request.form.get("undo"))
     cursor.execute("SELECT * FROM closedTickets WHERE ID = ?", (itemID,))
     item = cursor.fetchone()
     cursor.execute("INSERT INTO tickets (userID, title, description, status, priority, created_at, imagePath) VALUES (?, ?, ?, ?, ?, ?, ?)", (item[1], item[2], item[3], "open", item[5], item[6], item[7]))
@@ -261,7 +268,7 @@ def undoDelete():
 @app.route("/editItem", methods=["POST"])
 def editItem():
     #global editIndex
-    editID = int(request.form.get("edit", 0))
+    editID = escape(int(request.form.get("edit", 0)))
     conn = sqlite3.connect('piccoliTicketi.db')
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM tickets WHERE ID = ?", (editID,))
@@ -278,14 +285,12 @@ def editItem():
 
 @app.route("/saveItem", methods=["POST"])
 def saveItem():
-    #global edit_Index
-    #recordIndex = int(request.form.get("editIndex"))
     conn = sqlite3.connect('piccoliTicketi.db')
     cursor = conn.cursor()
     cursor.execute("SELECT status FROM users WHERE id = ?", (session['userID'],))
     userStatus = cursor.fetchone()
     if userStatus and userStatus[0] == 'user':
-        itemID = request.form.get("editIndex") 
+        itemID = escape(request.form.get("editIndex"))
         newTitle = escape(request.form.get("newItem"))
         newDescription = escape(request.form.get("newDescription"))
         if not newTitle or not newDescription:
@@ -294,7 +299,7 @@ def saveItem():
         cursor.execute("UPDATE tickets SET title = ?, description = ? WHERE ID = ?",(newTitle, newDescription, itemID))
         conn.commit()
     elif userStatus and userStatus[0] == 'admin':
-        itemID = request.form.get("editIndex") 
+        itemID = escape(request.form.get("editIndex"))
         newTitle = escape(request.form.get("newItem"))
         newDescription = escape(request.form.get("newDescription"))
         newStatus = escape(request.form.get("newStatus"))
@@ -310,7 +315,7 @@ def saveItem():
 
 @app.route("/solve_item", methods=["POST"])
 def solve_item():
-    itemID = request.form.get("solve")
+    itemID = escape(request.form.get("solve"))
     conn = sqlite3.connect('piccoliTicketi.db')
     cursor = conn.cursor()
     cursor.execute("SELECT status FROM users WHERE id = ?", (session['userID'],))
@@ -343,12 +348,14 @@ def admin():
         return redirect('/')
     cursor.execute("SELECT * FROM tickets ORDER BY priority ASC, created_at ASC")
     tickets = cursor.fetchall()
+    cursor.execute("SELECT fname FROM users WHERE id = ?", (session['userID'],))
+    name = cursor.fetchone()
     conn.close()
-    return render_template("admin.html", tickets=tickets)
+    return render_template("admin.html", tickets=tickets, name=name[0] if name else None)
 
 @app.route("/deleteAdmin", methods=["POST"])
 def deleteAdmin():
-    username = request.form.get("username")
+    username = escape(request.form.get("username"))
     if username == "SuperFinnee":
         flash("Don't be silly you absolute idiot.", "error")
         return redirect('/admin')
@@ -367,7 +374,7 @@ def deleteAdmin():
 
 @app.route("/deleteUser", methods=["POST"])
 def deleteUser():
-    username = request.form.get("username")
+    username = escape(request.form.get("username"))
     if username == "SuperFinnee":
         flash("Let's not do this one again. It was embarrasing the first time.", "error")
         return redirect('/admin')
@@ -396,7 +403,7 @@ def createAdmin():
         flash("You do not have permission to acess this page.", "error")
         return redirect('/')
     if request.method == "POST":
-        user = request.form.get('username')
+        user = escape(request.form.get('username'))
         cursor.execute("UPDATE users SET status = 'admin' WHERE username = ?", (user,))
         conn.commit()
         conn.close()

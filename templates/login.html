@@ -3,16 +3,23 @@
 {% block body %}
 
 <h1>Login</h1>
-<form action="/login" method="POST">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <label for ="username">Username</label>
-    <input name="username" id="username" placeholder="Username" type="text" required> 
-    <br><br>
-    <label for="password">Password</label>
-    <input name="password" id="password" placeholder="Password" type="password" required>
-    <br><br>
-    <button type="submit">Login</button>
-</form>
-<p>Don't have an account? <a href="/register">Register here</a></p>
+<div class="formCard">
+    <form action="/login" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label for ="username">Username</label>
+        <input name="username" id="username" placeholder="Username" type="text" required> 
+        <br><br>
+        <label for="password">Password</label>
+        <input name="password" id="password" placeholder="Password" type="password" required>
+        <button type="button" onclick="
+            var p = document.getElementById('password');
+            p.type = p.type === 'password' ? 'text' : 'password';
+            this.textContent = p.type === 'password' ? 'Show' : 'Hide';
+            ">Show</button>
+        <br><br>
+        <button type="submit">Login</button>
+    </form>
+    <p>Don't have an account? <a href="/register">Register here</a></p>
+</div>
 
 {% endblock %}
