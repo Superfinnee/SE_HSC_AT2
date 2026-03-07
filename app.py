@@ -36,7 +36,7 @@ UPLOAD_FOLDER = os.path.join('static', 'uploads')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 priorities = ['Low', 'Medium', 'High']
 
-limiter = Limiter(get_remote_address, app=app, default_limits=["5 per minute"])
+#limiter = Limiter(get_remote_address, app=app, default_limits=["5 per minute"]) ---------- Implemented in the Limiter initialization, not here to avoid interfering with testing and development
 
 
 
@@ -119,7 +119,7 @@ def register():
         userExists = cursor.fetchone()[0] > 0
         
         if userExists:
-            flash('Username already exists.', 'error')
+            flash('Username already exists, Please choose another.', 'error')
         else:
             #Insert new user
             cursor.execute('INSERT INTO users (fName, lName, email, username, password) values (?, ?, ?, ?, ?)', (fName, lName, email, username, hashedPassword))
@@ -160,17 +160,6 @@ def logout():
     session.clear()
     flash('You have been logged out.', 'success')
     return redirect('/login')
-
-#To create a new admin user, paste <a href="/admin">admin</a> in the index.html file and click it once while logged in as the user you want to make admin.
-#Also unccoment below:
-'''@app.route("/admin")
-def admin():
-    conn = sqlite3.connect('piccoliTicketi.db')
-    cursor = conn.cursor()
-    cursor.execute("UPDATE users SET status = 'admin' WHERE username = ?", (session['username'],))
-    conn.commit()
-    conn.close()
-    return redirect('/')'''
 
 @app.route('/createTicket', methods=["GET", "POST"])
 def createTicket():
@@ -244,17 +233,30 @@ def delete_item():
     returnAdmin()
     return redirect("/")
 
-    #recordIndex = int(request.form.get("delete"))
-    #toDoList.pop(recordIndex)
-    '''
-    itemID = request.form.get("delete")
+@app.route("/undoDelete", methods=["POST"])
+def undoDelete():
     conn = sqlite3.connect('piccoliTicketi.db')
     cursor = conn.cursor()
-    cursor.execute("DELETE FROM tickets WHERE ID = ?", (itemID,))
+    cursor.execute("SELECT status FROM users WHERE id = ?", (session['userID'],))
+    userStatus = cursor.fetchone()
+    if userStatus and userStatus[0] == 'admin':
+        cursor.execute("SELECT * FROM closedTickets ORDER BY id DESC LIMIT 1")
+        item = cursor.fetchone()
+        cursor.execute("INSERT INTO tickets (userID, title, description, status, priority, created_at, imagePath) VALUES (?, ?, ?, ?, ?, ?, ?)", (item[1], item[2], item[3], "open", item[5], item[6], item[7]))
+        conn.commit()
+        cursor.execute("DELETE FROM closedTickets WHERE ID = ?", (item[0],))
+        conn.commit()
+        conn.close()
+        return redirect("/admin")
+    itemID = request.form.get("undo")
+    cursor.execute("SELECT * FROM closedTickets WHERE ID = ?", (itemID,))
+    item = cursor.fetchone()
+    cursor.execute("INSERT INTO tickets (userID, title, description, status, priority, created_at, imagePath) VALUES (?, ?, ?, ?, ?, ?, ?)", (item[1], item[2], item[3], "open", item[5], item[6], item[7]))
     conn.commit()
-    conn.close()'''
-        
-    return redirect("/")
+    cursor.execute("DELETE FROM closedTickets WHERE ID = ?", (itemID,))
+    conn.commit()
+    conn.close()
+    return returnAdmin()
 
 @app.route("/editItem", methods=["POST"])
 def editItem():
@@ -269,6 +271,7 @@ def editItem():
     cursor = conn.cursor()
     cursor.execute("SELECT status FROM users WHERE id = ?", (session['userID'],))
     userStatus = cursor.fetchone()
+    conn.close()
     if userStatus and userStatus[0] == 'admin':
         return render_template('admin.html', tickets=tickets, editIndex=editID, priority=priorities)
     return render_template("index.html", tickets=tickets, editIndex=editID)
@@ -301,13 +304,8 @@ def saveItem():
             return redirect('/editItem')
         cursor.execute("UPDATE tickets SET title = ?, description = ?, status = ?, priority = ? WHERE ID = ?",(newTitle, newDescription, newStatus, newPriority, itemID))
         conn.commit()
-    
-    #toDoList[recordIndex]["item"] = newItem
-    #toDoList[recordIndex]["priority"] = newPriority
-    
+        
     conn.close()
-    
-    #edit_Index = None
     return returnAdmin()
 
 @app.route("/solve_item", methods=["POST"])
@@ -315,6 +313,12 @@ def solve_item():
     itemID = request.form.get("solve")
     conn = sqlite3.connect('piccoliTicketi.db')
     cursor = conn.cursor()
+    cursor.execute("SELECT status FROM users WHERE id = ?", (session['userID'],))
+    userStatus = cursor.fetchone()
+    if userStatus and userStatus[0] != 'admin':
+        flash("You do not have permission to perform this action.", "error")
+        conn.close()
+        return redirect('/')
     cursor.execute("SELECT * FROM tickets WHERE ID = ?", (itemID,))
     item = cursor.fetchone()
     cursor.execute("INSERT INTO closedTickets (userID, title, description, status, priority, created_at, imagePath) VALUES (?, ?, ?, ?, ?, ?, ?)", (item[1], item[2], item[3], "Solved", item[5], item[6], item[7]))
@@ -331,10 +335,76 @@ def admin():
         return redirect('/login')
     conn = sqlite3.connect('piccoliTicketi.db')
     cursor = conn.cursor()
+    cursor.execute("SELECT status FROM users WHERE id = ?", (session['userID'],))
+    userStatus = cursor.fetchone()
+    if not userStatus or userStatus[0] != 'admin':
+        conn.close()
+        flash("You do not have permission to access this page.", "error")
+        return redirect('/')
     cursor.execute("SELECT * FROM tickets ORDER BY priority ASC, created_at ASC")
     tickets = cursor.fetchall()
     conn.close()
     return render_template("admin.html", tickets=tickets)
+
+@app.route("/deleteAdmin", methods=["POST"])
+def deleteAdmin():
+    username = request.form.get("username")
+    if username == "SuperFinnee":
+        flash("Don't be silly you absolute idiot.", "error")
+        return redirect('/admin')
+    conn = sqlite3.connect('piccoliTicketi.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT username FROM users WHERE id = ?", (session['userID'],))
+    operatorUsername = cursor.fetchone()
+    if not operatorUsername or operatorUsername[0] != 'SuperFinnee':
+        conn.close()
+        flash("You do not have permission to perform this action.", "error")
+        return redirect('/')
+    cursor.execute("UPDATE users SET status = 'user' WHERE username = ?", (username,))
+    conn.commit()
+    conn.close()
+    return redirect('/admin')
+
+@app.route("/deleteUser", methods=["POST"])
+def deleteUser():
+    username = request.form.get("username")
+    if username == "SuperFinnee":
+        flash("Let's not do this one again. It was embarrasing the first time.", "error")
+        return redirect('/admin')
+    conn = sqlite3.connect('piccoliTicketi.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT username FROM users WHERE id = ?", (session['userID'],))
+    usernameSQL = cursor.fetchone()
+    if not usernameSQL or usernameSQL[0] != 'SuperFinnee':
+        conn.close()
+        flash("You do not have permission to perform this action.", "error")
+        return redirect('/')
+    cursor.execute("DELETE FROM users WHERE username = ?", (username,))
+    conn.commit()
+    conn.close()
+    flash(f'User {username} has been deleted.', 'success') 
+    return redirect('/admin')
+
+@app.route("/createAdmin", methods=["GET", "POST"])
+def createAdmin():
+    conn = sqlite3.connect('piccoliTicketi.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT status FROM users WHERE id = ?", (session['userID'],))
+    userStatus = cursor.fetchone()
+    if not userStatus or userStatus[0] != 'admin':
+        conn.close()
+        flash("You do not have permission to acess this page.", "error")
+        return redirect('/')
+    if request.method == "POST":
+        user = request.form.get('username')
+        cursor.execute("UPDATE users SET status = 'admin' WHERE username = ?", (user,))
+        conn.commit()
+        conn.close()
+        return redirect('/admin')
+    cursor.execute("SELECT username FROM users WHERE id = ?", (session['userID'],))
+    username = cursor.fetchone()
+    conn.close()
+    return render_template('createAdmin.html', username=username[0] if username else None)
 
 if __name__ == "__main__":
     app.run(debug=True, ssl_context=("C:\\Users\\piccolif26\\OneDrive\\Documents\\12SE_Web_Dev\\SE_HSC_AT2\\localhost+3.pem", "C:\\Users\\piccolif26\\OneDrive\\Documents\\12SE_Web_Dev\\SE_HSC_AT2\\localhost+3-key.pem"))

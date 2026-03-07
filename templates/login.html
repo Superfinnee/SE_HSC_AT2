@@ -5,9 +5,12 @@
 <h1>Login</h1>
 <form action="/login" method="POST">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <!--Need to make username input to be both email and username-->
-    <input name="username" placeholder="Username" type="text" required> 
-    <input name="password" placeholder="Password" type="password" required>
+    <label for ="username">Username</label>
+    <input name="username" id="username" placeholder="Username" type="text" required> 
+    <br><br>
+    <label for="password">Password</label>
+    <input name="password" id="password" placeholder="Password" type="password" required>
+    <br><br>
     <button type="submit">Login</button>
 </form>
 <p>Don't have an account? <a href="/register">Register here</a></p>

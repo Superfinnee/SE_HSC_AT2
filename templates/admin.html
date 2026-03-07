@@ -1,7 +1,19 @@
 {% extends "layout.html" %}
 
 {% block body %}
-    
+    <div class="logoutContainer">
+        <form action="{{ url_for('logout') }}" method="get" style="display: inline;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit">Logout</button>
+        </form>
+        <form action="/createTicket" method="get" style="display: inline;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit">Create Ticket</button>
+        </form>
+        <form action="createAdmin" method="get" style="display: inline;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit">Create a new Admin</button>
+        </form>
     </div>
 
     <table class="tickets">
@@ -58,8 +70,8 @@
                     </td>
                 <!--Solve Button-->
                     <td class="solve">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <form action="{{ url_for('solve_item') }}" method="POST">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <input type="hidden" name="solve" value="{{ ticket[0] }}">
                             <button class="solve-btn" title="Solve">&#10004;</button>
                         </form>
@@ -67,7 +79,7 @@
                 <!--Image-->
                     <td>
                         {% if ticket[7] %}
-                            <img src="{{ url_for('static', filename=ticket[7]) }}" style="max-height:100px;">
+                            <img src="{{ url_for('static', filename=ticket[7]) }}" style="max-height:100px;" alt="Ticket Attachment">
                         {% endif %}
                     </td>
             <!-----------------------End of edit mode------------------>
@@ -104,7 +116,7 @@
                 <!--Image-->
                     <td>
                         {% if ticket[7] %}
-                            <img src="{{ url_for('static', filename=ticket[7]) }}" style="height:200px;">
+                            <img src="{{ url_for('static', filename=ticket[7]) }}" style="height:200px;" alt="Ticket Attachment">
                         {% endif %}
                     </td>
                 {% endif %}
@@ -112,5 +124,9 @@
         </tr>
         {% endfor %}
     </table>
+    <form action="{{ url_for("undoDelete") }}" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="undo-btn" title="Undo Delete">Undo Delete</button>
+    </form>
 
 {% endblock %}

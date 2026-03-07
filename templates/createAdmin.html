@@ -1,0 +1,49 @@
+{% extends "layout.html" %}
+
+{% block body %}
+
+<div class="logoutContainer">
+    <form action="{{ url_for('logout') }}" method="get" style="display: inline;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit">Logout</button>
+    </form>
+    <form action="/createTicket" method="get" style="display: inline;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit">Create Ticket</button>
+    </form>
+    <form action="createAdmin" method="get" style="display: inline;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit">Create a new Admin</button>
+</div>
+
+<h1>Create A New Admin</h1>
+<form method="POST" action="/createAdmin">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <p>Enter the username of the account you want to make an admin below.</p>
+    <input name="username" placeholder="Username" type="text" required>
+    <button type="submit">Create Admin</button>
+</form>
+<br><br>
+<form action="/" method="get">
+    <button type="submit">Back to Dashboard</button>
+</form>
+<br><br>
+{% if username == "SuperFinnee" %}
+<h2>Super Admin Controls</h2>
+<h3> Delete Admin</h3>
+    <form action="{{ url_for('deleteAdmin') }}" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <p>Enter the username of the admin you want to delete below.</p>
+        <input name="username" placeholder="Username" type="text" required>
+        <button type="submit">Delete Admin</button>
+    </form>
+    <h3> Delete User</h3>
+    <form action="{{ url_for('deleteUser') }}" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <p>Enter the username of the user you want to delete below. Be careful, this action is irreversible.</p>
+        <input name="username" placeholder="Username" type="text" required>
+        <button type="submit">Delete User</button>
+    </form>
+{% endif %}
+
+{% endblock %}
