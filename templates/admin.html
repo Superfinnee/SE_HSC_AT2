@@ -2,7 +2,7 @@
 
 {% block body %}
     <div class="logoutContainer">
-        <form action="{{ url_for('logout') }}" method="get">
+        <form action="{{ url_for('logout') }}" method="POST">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit">Logout</button>
         </form>

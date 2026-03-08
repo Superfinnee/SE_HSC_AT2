@@ -1,5 +1,3 @@
-from webbrowser import get
-
 from flask import Flask, render_template, redirect, request, session, flash, url_for
 import sqlite3, os
 import werkzeug
@@ -144,7 +142,6 @@ def login():
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
         user = cursor.fetchone()
-        print(user)
         if user and check_password_hash(user[5], password):
             session['userID'] = user[0]
             session['username'] = user[4]
@@ -160,7 +157,7 @@ def login():
         flash ("Invalid username or password", "error")
     return render_template('login.html')
 
-@app.route('/logout')
+@app.route('/logout', methods=["POST"])
 def logout():
     session.clear()
     flash('You have been logged out.', 'success')
@@ -237,8 +234,7 @@ def delete_item():
     cursor.execute("DELETE FROM tickets WHERE ID = ?", (itemID,))
     conn.commit()
     conn.close()
-    returnAdmin()
-    return redirect("/")
+    return returnAdmin()
 
 @app.route("/undoDelete", methods=["POST"])
 def undoDelete():
@@ -331,8 +327,7 @@ def solve_item():
     cursor.execute("DELETE FROM tickets WHERE ID = ?", (itemID,))
     conn.commit()
     conn.close()
-    returnAdmin()
-    return redirect("/")
+    return returnAdmin()
 
 @app.route("/admin", methods=["GET", "POST"])
 def admin():
