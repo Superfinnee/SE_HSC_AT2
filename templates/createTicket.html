@@ -1,16 +1,7 @@
 {% extends "layout.html" %}
 
 {% block body %}
-    <div class="logoutContainer">
-        <form action="{{ url_for('logout') }}" method="get">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button type="submit">Logout</button>
-        </form>
-        <form action="/" method="get">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button type="submit">Back to Dashboard</button>
-        </form>
-    </div>
+
     <h1>Create New Ticket</h1>
     <div class="formCard">
         <form method="POST" action="/createTicket" enctype="multipart/form-data">

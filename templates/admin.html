@@ -1,26 +1,7 @@
 {% extends "layout.html" %}
 
 {% block body %}
-    <div class="logoutContainer">
-        <form action="{{ url_for('logout') }}" method="POST">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button type="submit">Logout</button>
-        </form>
-        <form action="/createTicket" method="get">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button type="submit">Create Ticket</button>
-        </form>
-        <form action="createAdmin" method="get">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button type="submit">Create a new Admin</button>
-        </form>
-        <form class="undoButton" action="{{ url_for("undoDelete") }}" method="POST">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button type="submit" class="undo-btn" title="Undo Delete">Undo Delete</button>
-        </form>
-    </div>
 
-    
     <h1>Welcome, {{ name }}!</h1>
     
 <div class="tickets-container">
@@ -49,11 +30,17 @@
                         </td>
                     <!--Change description-->
                         <td>
-                            <input type="text" name="newDescription" value="{{ ticket[3] | safe }}">
+                            <textarea type="text" name="newDescription">{{ ticket[3] | safe }}</textarea>
                         </td>
                     <!--Change status-->
                         <td>
-                            <input type="text" name="newStatus" value="{{ ticket[4] | safe }}">
+                            <select name="newStatus">
+                                <option value="{{ 1 }}" {% if ticket[4] == '1' %}selected{% endif %}>{{ statusDict[1] }}</option>
+                                <option value="{{ 2 }}" {% if ticket[4] == '2' %}selected{% endif %}>{{ statusDict[2] }}</option>
+                                <option value="{{ 3 }}" {% if ticket[4] == '3' %}selected{% endif %}>{{ statusDict[3] }}</option>
+                                <option value="{{ 4 }}" {% if ticket[4] == '4' %}selected{% endif %}>{{ statusDict[4] }}</option>
+                                <option value="{{ 5 }}" {% if ticket[4] == '5' %}selected{% endif %}>{{ statusDict[5] }}</option>
+                            </select>
                         </td>
                     <!--Change priority-->
                         <td>
@@ -95,7 +82,7 @@
                 <!--For when the list is not in edit mode-->
                     <td>{{ ticket[2] | safe}}</td>
                     <td>{{ ticket[3] | safe}}</td>
-                    <td>{{ ticket[4] | safe}}</td>
+                    <td>{{ statusDict[ticket[4]] | safe}}</td>
                     <td>{{ ticket[5] | safe}}</td>
                 <!--Edit Button-->
                     <td class="edit">

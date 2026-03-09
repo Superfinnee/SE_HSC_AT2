@@ -33,6 +33,7 @@ app.secret_key = 'AP_Fp3279Fp'
 UPLOAD_FOLDER = os.path.join('static', 'uploads')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 priorities = ['Low', 'Medium', 'High']
+status= {1: 'Open', 2: 'pending', 3: 'In Progress', 4: 'Closed', 5: 'Solved'}
 
 #limiter = Limiter(get_remote_address, app=app, default_limits=["5 per minute"]) ---------- Implemented in the Limiter initialization, not here to avoid interfering with testing and development
 
@@ -57,7 +58,7 @@ def initDB():
             userID INTEGER NOT NULL,
             title TEXT NOT NULL,
             description TEXT NOT NULL,
-            status TEXT NOT NULL,
+            status INTEGER NOT NULL,
             priority TEXT,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             imagePath TEXT,
@@ -70,7 +71,7 @@ def initDB():
             userID INTEGER NOT NULL,
             title TEXT NOT NULL,
             description TEXT NOT NULL,
-            status TEXT NOT NULL,
+            status INTEGER NOT NULL,
             priority TEXT,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             imagePath TEXT,
@@ -167,6 +168,12 @@ def logout():
 def createTicket():
     if 'userID' not in session:
         return redirect('/login')
+    
+    conn = sqlite3.connect('piccoliTicketi.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT status FROM users WHERE id = ?", (session['userID'],))
+    userStatus = cursor.fetchone()
+    
     if request.method == "POST":
         title = escape(request.form['title'])
         description = escape(request.form['description'])
@@ -178,6 +185,7 @@ def createTicket():
         if file and file.filename:
             if not file.mimetype.startswith("image/"):
                 flash("Please check your uploaded file, only images are allowed.", "error")
+                conn.close()
                 return redirect('/createTicket')
             
             ext = os.path.splitext(file.filename)[1].lower()
@@ -189,17 +197,18 @@ def createTicket():
         
         if title == "" or description == "":
             flash("Please fill in all required fields.", "error")
+            conn.close()
             return redirect('/createTicket')
         
-        conn = sqlite3.connect('piccoliTicketi.db')
-        cursor = conn.cursor()
-        cursor.execute('INSERT INTO tickets (userID, title, description, status, imagePath) values (?, ?, ?, ?, ?)', (userID, title, description, 'Open', imagePath))
+        cursor.execute('INSERT INTO tickets (userID, title, description, status, imagePath) values (?, ?, ?, ?, ?)', (userID, title, description, 1, imagePath))
         conn.commit()
         conn.close()
         
         flash('Ticket created successfully!', 'success')
         return redirect('/')
-    return render_template('createTicket.html')
+    
+    conn.close()
+    return render_template('createTicket.html', status=userStatus[0] if userStatus else None)
 
 @app.route("/")
 def index():    
@@ -216,20 +225,21 @@ def index():
     ticketsList = cursor.fetchall()
     cursor.execute("SELECT * FROM closedTickets WHERE userID = ?", (session['userID'],))
     ticketsList += cursor.fetchall()
-    cursor.execute("SELECT fname FROM users WHERE id = ?", (session['userID'],))
+    cursor.execute("SELECT fname, status FROM users WHERE id = ?", (session['userID'],))
     userName = cursor.fetchone()
     conn.close()
-    return render_template("index.html", tickets=ticketsList, name=userName[0] if userName else "User")
+    return render_template("index.html", statusDict=status, tickets=ticketsList, name=userName[0] if userName else "User", status=userName[1] if userName else None)
 
 @app.route("/delete_item", methods=["POST"])
 def delete_item():
-    
+    if 'userID' not in session:
+        return redirect('/login')
     itemID = escape(request.form.get("delete"))
     conn = sqlite3.connect('piccoliTicketi.db')
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM tickets WHERE ID = ?", (itemID,))
     item = cursor.fetchone()
-    cursor.execute("INSERT INTO closedTickets (userID, title, description, status, priority, created_at, imagePath) VALUES (?, ?, ?, ?, ?, ?, ?)", (item[1], item[2], item[3], "Closed", item[5], item[6], item[7]))
+    cursor.execute("INSERT INTO closedTickets (userID, title, description, status, priority, created_at, imagePath) VALUES (?, ?, ?, ?, ?, ?, ?)", (item[1], item[2], item[3], 4, item[5], item[6], item[7]))
     conn.commit()
     cursor.execute("DELETE FROM tickets WHERE ID = ?", (itemID,))
     conn.commit()
@@ -238,6 +248,8 @@ def delete_item():
 
 @app.route("/undoDelete", methods=["POST"])
 def undoDelete():
+    if 'userID' not in session:
+        return redirect('/login')
     conn = sqlite3.connect('piccoliTicketi.db')
     cursor = conn.cursor()
     cursor.execute("SELECT status FROM users WHERE id = ?", (session['userID'],))
@@ -245,7 +257,7 @@ def undoDelete():
     if userStatus and userStatus[0] == 'admin':
         cursor.execute("SELECT * FROM closedTickets ORDER BY id DESC LIMIT 1")
         item = cursor.fetchone()
-        cursor.execute("INSERT INTO tickets (userID, title, description, status, priority, created_at, imagePath) VALUES (?, ?, ?, ?, ?, ?, ?)", (item[1], item[2], item[3], "open", item[5], item[6], item[7]))
+        cursor.execute("INSERT INTO tickets (userID, title, description, status, priority, created_at, imagePath) VALUES (?, ?, ?, ?, ?, ?, ?)", (item[1], item[2], item[3], 1, item[5], item[6], item[7]))
         conn.commit()
         cursor.execute("DELETE FROM closedTickets WHERE ID = ?", (item[0],))
         conn.commit()
@@ -254,7 +266,7 @@ def undoDelete():
     itemID = escape(request.form.get("undo"))
     cursor.execute("SELECT * FROM closedTickets WHERE ID = ?", (itemID,))
     item = cursor.fetchone()
-    cursor.execute("INSERT INTO tickets (userID, title, description, status, priority, created_at, imagePath) VALUES (?, ?, ?, ?, ?, ?, ?)", (item[1], item[2], item[3], "open", item[5], item[6], item[7]))
+    cursor.execute("INSERT INTO tickets (userID, title, description, status, priority, created_at, imagePath) VALUES (?, ?, ?, ?, ?, ?, ?)", (item[1], item[2], item[3], 1, item[5], item[6], item[7]))
     conn.commit()
     cursor.execute("DELETE FROM closedTickets WHERE ID = ?", (itemID,))
     conn.commit()
@@ -263,8 +275,10 @@ def undoDelete():
 
 @app.route("/editItem", methods=["POST"])
 def editItem():
+    if 'userID' not in session:
+        return redirect('/login')
     #global editIndex
-    editID = escape(int(request.form.get("edit", 0)))
+    editID = int(request.form.get("edit", 0))
     conn = sqlite3.connect('piccoliTicketi.db')
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM tickets WHERE ID = ?", (editID,))
@@ -272,15 +286,18 @@ def editItem():
     conn.close()
     conn = sqlite3.connect('piccoliTicketi.db')
     cursor = conn.cursor()
-    cursor.execute("SELECT status FROM users WHERE id = ?", (session['userID'],))
+    cursor.execute("SELECT fname, status FROM users WHERE id = ?", (session['userID'],))
     userStatus = cursor.fetchone()
     conn.close()
-    if userStatus and userStatus[0] == 'admin':
-        return render_template('admin.html', tickets=tickets, editIndex=editID, priority=priorities)
-    return render_template("index.html", tickets=tickets, editIndex=editID)
+    print(tickets[0], editID)
+    if userStatus and userStatus[1] == 'admin':
+        return render_template('admin.html', statusDict=status, tickets=tickets, editIndex=editID, priority=priorities, name=userStatus[0] if userStatus else None, status=userStatus[1] if userStatus else None)
+    return render_template("index.html", statusDict=status, tickets=tickets, editIndex=editID, name=userStatus[0] if userStatus else None, status=userStatus[1] if userStatus else None)
 
 @app.route("/saveItem", methods=["POST"])
 def saveItem():
+    if 'userID' not in session:
+        return redirect('/login')
     conn = sqlite3.connect('piccoliTicketi.db')
     cursor = conn.cursor()
     cursor.execute("SELECT status FROM users WHERE id = ?", (session['userID'],))
@@ -311,6 +328,8 @@ def saveItem():
 
 @app.route("/solve_item", methods=["POST"])
 def solve_item():
+    if 'userID' not in session:
+        return redirect('/login')
     itemID = escape(request.form.get("solve"))
     conn = sqlite3.connect('piccoliTicketi.db')
     cursor = conn.cursor()
@@ -322,7 +341,7 @@ def solve_item():
         return redirect('/')
     cursor.execute("SELECT * FROM tickets WHERE ID = ?", (itemID,))
     item = cursor.fetchone()
-    cursor.execute("INSERT INTO closedTickets (userID, title, description, status, priority, created_at, imagePath) VALUES (?, ?, ?, ?, ?, ?, ?)", (item[1], item[2], item[3], "Solved", item[5], item[6], item[7]))
+    cursor.execute("INSERT INTO closedTickets (userID, title, description, status, priority, created_at, imagePath) VALUES (?, ?, ?, ?, ?, ?, ?)", (item[1], item[2], item[3], 5, item[5], item[6], item[7]))
     conn.commit()
     cursor.execute("DELETE FROM tickets WHERE ID = ?", (itemID,))
     conn.commit()
@@ -343,13 +362,15 @@ def admin():
         return redirect('/')
     cursor.execute("SELECT * FROM tickets ORDER BY priority ASC, created_at ASC")
     tickets = cursor.fetchall()
-    cursor.execute("SELECT fname FROM users WHERE id = ?", (session['userID'],))
+    cursor.execute("SELECT fname, status FROM users WHERE id = ?", (session['userID'],))
     name = cursor.fetchone()
     conn.close()
-    return render_template("admin.html", tickets=tickets, name=name[0] if name else None)
+    return render_template("admin.html", statusDict=status, tickets=tickets, name=name[0] if name else None, status=name[1] if name else None)
 
 @app.route("/deleteAdmin", methods=["POST"])
 def deleteAdmin():
+    if 'userID' not in session:
+        return redirect('/login')
     username = escape(request.form.get("username"))
     if username == "SuperFinnee":
         flash("Don't be silly you absolute idiot.", "error")
@@ -369,6 +390,8 @@ def deleteAdmin():
 
 @app.route("/deleteUser", methods=["POST"])
 def deleteUser():
+    if 'userID' not in session:
+        return redirect('/login')
     username = escape(request.form.get("username"))
     if username == "SuperFinnee":
         flash("Let's not do this one again. It was embarrasing the first time.", "error")
@@ -389,6 +412,8 @@ def deleteUser():
 
 @app.route("/createAdmin", methods=["GET", "POST"])
 def createAdmin():
+    if 'userID' not in session:
+        return redirect('/login')
     conn = sqlite3.connect('piccoliTicketi.db')
     cursor = conn.cursor()
     cursor.execute("SELECT status FROM users WHERE id = ?", (session['userID'],))
@@ -403,11 +428,27 @@ def createAdmin():
         conn.commit()
         conn.close()
         return redirect('/admin')
-    cursor.execute("SELECT username FROM users WHERE id = ?", (session['userID'],))
+    cursor.execute("SELECT username, status FROM users WHERE id = ?", (session['userID'],))
     username = cursor.fetchone()
     conn.close()
-    return render_template('createAdmin.html', username=username[0] if username else None)
+    return render_template('createAdmin.html', username=username[0] if username else None, status=username[1] if username else None)
+
+@app.route("/closedTickets", methods=["GET"])
+def closedTickets():
+    if 'userID' not in session:
+        return redirect('/login')
+    conn = sqlite3.connect('piccoliTicketi.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT status FROM users WHERE id = ?", (session['userID'],))
+    userStatus = cursor.fetchone()
+    if not userStatus or userStatus[0] != 'admin':
+        conn.close()
+        flash("You do not have permission to access this page.", "error")
+        return redirect('/')
+    cursor.execute("SELECT * FROM closedTickets ORDER BY priority ASC, created_at ASC")
+    tickets = cursor.fetchall()
+    conn.close()
+    return render_template("closedTickets.html", statusDict=status, tickets=tickets, status=userStatus[0] if userStatus else None)
 
 if __name__ == "__main__":
     app.run(debug=True, ssl_context=("C:\\Users\\piccolif26\\OneDrive\\Documents\\12SE_Web_Dev\\SE_HSC_AT2\\localhost+3.pem", "C:\\Users\\piccolif26\\OneDrive\\Documents\\12SE_Web_Dev\\SE_HSC_AT2\\localhost+3-key.pem"))
-    

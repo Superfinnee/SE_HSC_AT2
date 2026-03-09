@@ -220,7 +220,7 @@ table {
     border: solid 1px;
 }
 
-table.tickets {
+table.tickets, table.closedTickets {
     table-layout: fixed;  /* Enforces column widths — without this, browser ignores width hints */
     width: 100%;
     border-collapse: collapse;
@@ -228,22 +228,21 @@ table.tickets {
 }
 
 table.tickets th,
-table.tickets td {
+table.tickets td,
+table.closedTickets th,
+table.closedTickets td {
     padding: 10px 0;
     text-align: center;
     border-bottom: 1px solid #ddd;
     border-left: 1px solid #ddd;
-    overflow: hidden;           /* Clip content that exceeds cell width */
-    text-overflow: ellipsis;    /* Show "..." when text is clipped */
-    white-space: nowrap;
 }
 
-table.tickets tr:hover {
+table.tickets tr:hover, table.closedTickets tr:hover {
     background-color: #f1f5fb;  /* Subtle row highlight for easier scanning */
 }
 
 /* Ticket images — scale with column width while preserving aspect ratio */
-table.tickets td img {
+table.tickets td img, table.closedTickets td img {
     width: 100%;
     max-width: 100%;
     height: auto;       /* Let height scale proportionally to width */
@@ -253,16 +252,24 @@ table.tickets td img {
 
 /* --- Column widths (desktop) --- */
 table.tickets th:nth-child(1),
-table.tickets td:nth-child(1) { width: 20%; } /* Title */
+table.tickets td:nth-child(1),
+table.closedTickets th:nth-child(1),
+table.closedTickets td:nth-child(1) { width: 20%;} /* Title */
 
 table.tickets th:nth-child(2),
-table.tickets td:nth-child(2) { width: 25%; } /* Description */
+table.tickets td:nth-child(2),
+table.closedTickets th:nth-child(2),
+table.closedTickets td:nth-child(2) { width: 25%; } /* Description */
 
 table.tickets th:nth-child(3),
-table.tickets td:nth-child(3) { width: 10%; } /* Status */
+table.tickets td:nth-child(3),
+table.closedTickets th:nth-child(3),
+table.closedTickets td:nth-child(3) { width: 5%; } /* Status */
 
 table.tickets th:nth-child(4),
-table.tickets td:nth-child(4) { width: 10%; } /* Priority */
+table.tickets td:nth-child(4),
+table.closedTickets th:nth-child(4),
+table.closedTickets td:nth-child(4) { width: 5%; } /* Priority */
 
 /* Action columns (Edit / Close / Solve) — kept narrow since they only hold icon buttons */
 table.tickets th:nth-child(5),
@@ -274,21 +281,36 @@ table.tickets td:nth-child(7) { width: 5%; }
 
 table.tickets th:nth-child(8),
 table.tickets td:nth-child(8) {
-    width: 15%;
+    width: 21%;
     max-width: 150px;  /* Image column — capped to prevent oversized images dominating */
 }
+
+table.closedTickets th:nth-child(5),
+table.closedTickets td:nth-child(5) {width: 6%;}
 
 /* --- Ticket status row colours --- */
 
 /* Closed tickets are dimmed to indicate they are no longer active */
-tr.status-closed {
+tr.status-4 {
     opacity: 0.6;
     background-color: #f8f9fa;
 }
 
 /* Solved tickets are highlighted green to distinguish from closed */
-tr.status-solved {
+tr.status-5 {
     background-color: #d4edda;
+}
+
+tr.status-3 {
+    background-color: #fff3cd; /* In-progress tickets highlighted yellow */
+}
+
+tr.status-1 {
+    background-color: #cce5ff; /* Open tickets highlighted blue */
+}
+
+tr.status-2 {
+    background-color: #f892b488; /* Pending tickets highlighted red */
 }
 
 
