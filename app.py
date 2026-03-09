@@ -1,3 +1,4 @@
+from click import confirm
 from flask import Flask, render_template, redirect, request, session, flash, url_for
 import sqlite3, os
 import werkzeug
@@ -102,6 +103,10 @@ def register():
             email = escape(request.form['email'])
             username = escape(request.form['username'])
             password = escape(request.form['password'])
+            confirmPassword = escape(request.form['confirmPassword'])
+            if password != confirmPassword:
+                flash('Passwords do not match. Please try again.', 'error')
+                return redirect('/register')
             hashedPassword = generate_password_hash(password)
         except werkzeug.exceptions.BadRequestKeyError: # type: ignore
             flash(f'We detected an error, please try again', 'error')
