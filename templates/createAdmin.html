@@ -2,21 +2,6 @@
 
 {% block body %}
 
-<div class="logoutContainer">
-    <form action="{{ url_for('logout') }}">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <button type="submit">Logout</button>
-    </form>
-    <form action="/createTicket" method="get">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <button type="submit">Create Ticket</button>
-    </form>
-    <form action="/" method="get">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <button type="submit">Back to Dashboard</button>
-    </form>
-</div>
-
 <div class="formCard">
     <h1>Admin Controls</h1>
     <form method="POST" action="/createAdmin">

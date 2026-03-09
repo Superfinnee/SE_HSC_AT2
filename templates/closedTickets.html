@@ -2,6 +2,41 @@
 
 {% block body %}
 
+<h1>Closed Tickets</h1>
 
+<div class="tickets-container">
+    <table class="closedTickets">
+        <tr>
+            <th>Title</th>
+            <th>Description</th>
+            <th>Status</th>
+            <th>Priority</th>
+            <th>Restore</th>
+            <th>Image</th>
+        </tr>
+        {% for ticket in tickets %}
+            <tr>
+                <td>{{ ticket[2] | safe}}</td>
+                <td>{{ ticket[3] | safe}}</td>
+                <td>{{ statusDict[ticket[4]] | safe}}</td>
+                <td>{{ ticket[5] | safe}}</td>
+                <!--Edit Button-->
+                    <td class="edit">
+                        <form class="actionButton" action="{{ url_for('undoDelete') }}" method="POST">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="undo" value="{{ ticket[0] }}">
+                            <button class="edit-btn" title="Undo Delete">&#8630;</button>
+                        </form>
+                    </td>
+                <!--Image-->
+                    <td>
+                        {% if ticket[7] %}
+                            <img src="{{ url_for('static', filename=ticket[7]) }}" alt="Ticket Attachment">
+                        {% endif %}
+                    </td>                
+            </tr>
+        {% endfor %}
+    </table>
+</div>
 
 {% endblock %}

@@ -2,17 +2,6 @@
 
 {% block body %}
 
-    <div class="logoutContainer">
-        <form action="{{ url_for('logout') }}" method="get">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button type="submit">Logout</button>
-        </form>
-        <form action="/createTicket" method="get">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button type="submit">Create Ticket</button>
-        </form>
-    </div>
-
 <h1>Welcome, {{ name }}!</h1>
 <div class="tickets-container">
     <table class="tickets">
@@ -47,7 +36,7 @@
                             <button class="delete-btn" title="Delete" onclick="return confirm('Are you sure you want to close this ticket?')">&#128465;</button>
                         </form>
                     </td>
-                    <td>{{ ticket[4] | safe }}</td>
+                    <td>{{ statusDict[ticket[4]] | safe }}</td>
                     <td>
                         {% if ticket[7] %}
                                 <img src="{{ url_for('static', filename=ticket[7]) }}" alt="Ticket Attachment">
@@ -59,7 +48,7 @@
                     <td>{{ ticket[2] | safe }}</td>
                     <td>{{ ticket[3] | safe }}</td>
                     <td class="edit">
-                    {% if ticket[4] != "Closed" and ticket[4] != "Solved"%}
+                    {% if ticket[4] != 4 and ticket[4] != 5 %}
                         <form class="actionButton" action="{{ url_for('editItem') }}" method="POST">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <input type="hidden" name="edit" value="{{ ticket[0] }}">
@@ -74,7 +63,7 @@
                     {% endif %}
                     </td>
                     <td class="delete">
-                        {% if ticket[4] != "Closed" and ticket[4] != "Solved"%}
+                        {% if ticket[4] != 4 and ticket[4] != 5 %}
                             <form class="actionButton" action="{{ url_for('delete_item') }}" method="POST">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 <input type="hidden" name="delete" value="{{ ticket[0] }}">
@@ -84,7 +73,7 @@
                             &#128465;
                         {% endif %}
                     </td>
-                    <td>{{ ticket[4] | safe }}</td>
+                    <td>{{ statusDict[ticket[4]] | safe }}</td>
                     <td>
                         {% if ticket[7] %}
                             <img src="{{ url_for('static', filename=ticket[7]) }}" alt="Ticket Attachment">

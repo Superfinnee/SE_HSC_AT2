@@ -18,6 +18,36 @@
             {% endif %}
             {% endwith %}
         </div>
+        {% block buttons %}
+        <div class="logoutContainer">
+            <form action="{{ url_for('logout') }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit">Logout</button>
+            </form>
+            <form action="{{ url_for('index') }}" method="get">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit">Back to Dashboard</button>
+            </form>
+            <form action="{{ url_for('createTicket') }}" method="get">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit">Create Ticket</button>
+            </form>
+            {% if status == "admin" %}
+                <form action="{{ url_for('createAdmin') }}" method="get">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit">Create a new Admin</button>
+                </form>
+                <form class="undoButton" action="{{ url_for("undoDelete") }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="undo-btn" title="Undo Delete">Undo Delete</button>
+                </form>
+                <form class="closedTickets" action="{{ url_for("closedTickets") }}" method="GET">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" title="View Closed Tickets">View Closed Tickets</button>
+                </form>
+            {% endif %}
+        </div>
+        {% endblock %}
         {% block body%}
         {% endblock %}
         <br><br><br>
