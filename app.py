@@ -1,3 +1,4 @@
+from click import confirm
 from flask import Flask, render_template, redirect, request, session, flash, url_for
 import sqlite3, os
 import werkzeug
@@ -102,6 +103,10 @@ def register():
             email = escape(request.form['email'])
             username = escape(request.form['username'])
             password = escape(request.form['password'])
+            confirmPassword = escape(request.form['confirmPassword'])
+            if password != confirmPassword:
+                flash('Passwords do not match. Please try again.', 'error')
+                return redirect('/register')
             hashedPassword = generate_password_hash(password)
         except werkzeug.exceptions.BadRequestKeyError: # type: ignore
             flash(f'We detected an error, please try again', 'error')
@@ -410,8 +415,8 @@ def deleteUser():
     flash(f'User {username} has been deleted.', 'success') 
     return redirect('/admin')
 
-@app.route("/createAdmin", methods=["GET", "POST"])
-def createAdmin():
+@app.route("/manageUsers", methods=["GET", "POST"])
+def manageUsers():
     if 'userID' not in session:
         return redirect('/login')
     conn = sqlite3.connect('piccoliTicketi.db')
@@ -431,7 +436,7 @@ def createAdmin():
     cursor.execute("SELECT username, status FROM users WHERE id = ?", (session['userID'],))
     username = cursor.fetchone()
     conn.close()
-    return render_template('createAdmin.html', username=username[0] if username else None, status=username[1] if username else None)
+    return render_template('manageUsers.html', username=username[0] if username else None, status=username[1] if username else None)
 
 @app.route("/closedTickets", methods=["GET"])
 def closedTickets():
