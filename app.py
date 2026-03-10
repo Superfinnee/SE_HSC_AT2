@@ -13,8 +13,7 @@ import subprocess
 import hmac
 import hashlib
 import requests
-
-#Checking for git pull on pythonanywhere 2
+import threading
 
 app = Flask(__name__)
 
@@ -113,33 +112,19 @@ def returnAdmin():
 def git_pull():
     signature = request.headers.get('X-Hub-Signature-256') or ''
     expected = 'sha256=' + hmac.new(WEBHOOK_SECRET, request.data, hashlib.sha256).hexdigest()
-    
     if not hmac.compare_digest(signature, expected):
-        abort(403) # rejects anything that doesn't match
-    
-    #Pull latest code
-    result = subprocess.run(
-        ['git', '-C', REPO_PATH, 'pull'],
-        capture_output=True, text=True
-    )
-    
-    if result.returncode != 0:
-        return f'git pull failed:\n{result.stderr}', 500
-    
-    # Reload the app by making a request to the PA API
-    reload_url = (
-        f'https://www.pythonanywhere.com/api/v0/user/'
-        f'{PA_USERNAME}/webapps/{PA_DOMAIN}/reload/'
-    )
-    pa_response = requests.post(
-        reload_url,
-        headers={'Authorization': f'Token {PA_API_TOKEN}'}
-    )
-    
-    if pa_response.status_code == 200:
-        return 'Deployed successfully', 200
-    else:
-        return f'Failed to reload app: {pa_response.text}', 500
+        abort(403)
+
+    def deploy():
+        subprocess.run(['git', '-C', REPO_PATH, 'fetch', 'origin'], capture_output=True, text=True)
+        subprocess.run(['git', '-C', REPO_PATH, 'reset', '--hard', 'origin/main'], capture_output=True, text=True)
+        requests.post(
+            f'https://www.pythonanywhere.com/api/v0/user/{PA_USERNAME}/webapps/{PA_DOMAIN}/reload/',
+            headers={'Authorization': f'Token {PA_API_TOKEN}'}
+        )
+
+    threading.Thread(target=deploy).start()
+    return 'OK', 200  # GitHub gets this before the reload kills the worker
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
