@@ -1,4 +1,6 @@
 from flask import Flask, render_template, redirect, request, session, flash, url_for, abort
+from tabnanny import check
+from click import confirm
 import sqlite3, os
 import werkzeug
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -108,6 +110,16 @@ def returnAdmin():
         return redirect('/admin')
     return redirect('/')
 
+def checkAdmin():
+    conn = sqlite3.connect('piccoliTicketi.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT status FROM users WHERE id = ?", (session['userID'],))
+    userStatus = cursor.fetchone()
+    if not userStatus or userStatus[0] != 'admin':
+        conn.close()
+        flash("You do not have permission to acess this feature.", "error")
+    return userStatus[0]
+
 @app.route('/git-pull', methods=['POST'])
 @csrf.exempt
 def git_pull():
@@ -136,6 +148,10 @@ def register():
             email = escape(request.form['email'])
             username = escape(request.form['username'])
             password = escape(request.form['password'])
+            confirmPassword = escape(request.form['confirmPassword'])
+            if password != confirmPassword:
+                flash('Passwords do not match. Please try again.', 'error')
+                return redirect('/register')
             hashedPassword = generate_password_hash(password)
         except werkzeug.exceptions.BadRequestKeyError: # type: ignore
             flash(f'We detected an error, please try again', 'error')
@@ -298,18 +314,7 @@ def undoDelete():
         return redirect('/login')
     conn = sqlite3.connect('piccoliTicketi.db')
     cursor = conn.cursor()
-    cursor.execute("SELECT status FROM users WHERE id = ?", (session['userID'],))
-    userStatus = cursor.fetchone()
-    if userStatus and userStatus[0] == 'admin':
-        cursor.execute("SELECT * FROM closedTickets ORDER BY id DESC LIMIT 1")
-        item = cursor.fetchone()
-        cursor.execute("INSERT INTO tickets (userID, title, description, status, priority, created_at, imagePath) VALUES (?, ?, ?, ?, ?, ?, ?)", (item[1], item[2], item[3], 1, item[5], item[6], item[7]))
-        conn.commit()
-        cursor.execute("DELETE FROM closedTickets WHERE ID = ?", (item[0],))
-        conn.commit()
-        conn.close()
-        return redirect("/admin")
-    itemID = escape(request.form.get("undo"))
+    itemID = request.form.get("undo")
     cursor.execute("SELECT * FROM closedTickets WHERE ID = ?", (itemID,))
     item = cursor.fetchone()
     cursor.execute("INSERT INTO tickets (userID, title, description, status, priority, created_at, imagePath) VALUES (?, ?, ?, ?, ?, ?, ?)", (item[1], item[2], item[3], 1, item[5], item[6], item[7]))
@@ -379,11 +384,7 @@ def solve_item():
     itemID = escape(request.form.get("solve"))
     conn = sqlite3.connect('piccoliTicketi.db')
     cursor = conn.cursor()
-    cursor.execute("SELECT status FROM users WHERE id = ?", (session['userID'],))
-    userStatus = cursor.fetchone()
-    if userStatus and userStatus[0] != 'admin':
-        flash("You do not have permission to perform this action.", "error")
-        conn.close()
+    if checkAdmin() == "user":
         return redirect('/')
     cursor.execute("SELECT * FROM tickets WHERE ID = ?", (itemID,))
     item = cursor.fetchone()
@@ -398,14 +399,10 @@ def solve_item():
 def admin():
     if 'userID' not in session:
         return redirect('/login')
+    if checkAdmin() == "user":
+        return redirect('/')
     conn = sqlite3.connect('piccoliTicketi.db')
     cursor = conn.cursor()
-    cursor.execute("SELECT status FROM users WHERE id = ?", (session['userID'],))
-    userStatus = cursor.fetchone()
-    if not userStatus or userStatus[0] != 'admin':
-        conn.close()
-        flash("You do not have permission to access this page.", "error")
-        return redirect('/')
     cursor.execute("SELECT * FROM tickets ORDER BY priority ASC, created_at ASC")
     tickets = cursor.fetchall()
     cursor.execute("SELECT fname, status FROM users WHERE id = ?", (session['userID'],))
@@ -456,43 +453,55 @@ def deleteUser():
     flash(f'User {username} has been deleted.', 'success') 
     return redirect('/admin')
 
-@app.route("/createAdmin", methods=["GET", "POST"])
-def createAdmin():
+@app.route("/toggleAdmin", methods=["POST"])
+def toggleAdmin():
     if 'userID' not in session:
         return redirect('/login')
+    username = escape(request.form.get("username"))
     conn = sqlite3.connect('piccoliTicketi.db')
     cursor = conn.cursor()
-    cursor.execute("SELECT status FROM users WHERE id = ?", (session['userID'],))
-    userStatus = cursor.fetchone()
-    if not userStatus or userStatus[0] != 'admin':
-        conn.close()
-        flash("You do not have permission to acess this page.", "error")
+    if username == "SuperFinnee":
+        flash("Let's not do that. Your admin privileges have been revoked.", "error")
+        cursor.execute("UPDATE users SET status = 'user' WHERE id = ?", (session['userID'],))
         return redirect('/')
-    if request.method == "POST":
-        user = escape(request.form.get('username'))
-        cursor.execute("UPDATE users SET status = 'admin' WHERE username = ?", (user,))
-        conn.commit()
-        conn.close()
-        return redirect('/admin')
-    cursor.execute("SELECT username, status FROM users WHERE id = ?", (session['userID'],))
-    username = cursor.fetchone()
+    
+    cursor.execute("SELECT status FROM users WHERE username = ?", (username,))
+    userStatus = cursor.fetchone()
+    if userStatus and userStatus[0] == 'admin':
+        cursor.execute("UPDATE users SET status = 'user' WHERE username = ?", (username,))
+    else:
+        cursor.execute("UPDATE users SET status = 'admin' WHERE username = ?", (username,))
+    conn.commit()
     conn.close()
-    return render_template('createAdmin.html', username=username[0] if username else None, status=username[1] if username else None)
+    return redirect('/manageUsers')
+
+@app.route("/manageUsers", methods=["GET"])
+def manageUsers():
+    if 'userID' not in session:
+        return redirect('/login')
+    if checkAdmin() == "user":
+        return redirect('/')
+    conn = sqlite3.connect('piccoliTicketi.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT fname, lname, email, username, status FROM users")
+    users = cursor.fetchall()
+    cursor.execute("SELECT status, username FROM users WHERE id = ?", (session['userID'],))
+    userStatus = cursor.fetchone()
+    conn.close()
+    return render_template('manageUsers.html', users=users, status=userStatus[0] if userStatus else None, username=userStatus[1] if userStatus else None)
 
 @app.route("/closedTickets", methods=["GET"])
 def closedTickets():
     if 'userID' not in session:
         return redirect('/login')
+    if checkAdmin() == "user":
+        return redirect('/')
     conn = sqlite3.connect('piccoliTicketi.db')
     cursor = conn.cursor()
-    cursor.execute("SELECT status FROM users WHERE id = ?", (session['userID'],))
-    userStatus = cursor.fetchone()
-    if not userStatus or userStatus[0] != 'admin':
-        conn.close()
-        flash("You do not have permission to access this page.", "error")
-        return redirect('/')
     cursor.execute("SELECT * FROM closedTickets ORDER BY priority ASC, created_at ASC")
     tickets = cursor.fetchall()
+    cursor.execute("SELECT status FROM users WHERE id = ?", (session['userID'],))
+    userStatus = cursor.fetchone()
     conn.close()
     return render_template("closedTickets.html", statusDict=status, tickets=tickets, status=userStatus[0] if userStatus else None)
 

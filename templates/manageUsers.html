@@ -1,0 +1,76 @@
+{% extends "layout.html" %}
+
+{% block body %}
+
+<div class="userTable">
+    <table>
+        <tr>
+            <th>First Name</th>
+            <th>Last Name</th>
+            <th>Email</th>
+            <th>Username</th>
+            <th>Role</th>
+            <th>Toggle Admin</th>
+        </tr>
+        {% for user in users %}
+            <tr>
+                <td>{{ user[0] }}</td>
+                <td>{{ user[1] }}</td>
+                <td>{{ user[2] }}</td>
+                <td>{{ user[3] }}</td>
+                <td>{{ user[4] }}</td>
+                <td>
+                    {% if user[4] == 'admin' %}
+                        <form action="{{ url_for('toggleAdmin') }}" method="POST">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="username" value="{{ user[3] }}">
+                            <button type="submit">Revoke Admin</button>
+                        </form>
+                    {% else %}
+                        <form action="{{ url_for('toggleAdmin') }}" method="POST">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="username" value="{{ user[3] }}">
+                            <button type="submit">Make Admin</button>
+                        </form>
+                    {% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+    </table>
+</div>
+<br><br>
+<!--
+<div class="formCard">
+    <h1>Admin Controls</h1>
+    <form method="POST" action="/createAdmin">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label for="createAdmin">Create Admin:</label>
+        <p>Enter the username of the account you want to make an admin below.</p>
+        <input id="createAdmin" name="username" placeholder="Username" type="text" required autofocus>
+        <button type="submit">Create Admin</button>
+    </form>
+</div>
+<br><br>
+        -->
+{% if username == "SuperFinnee" %}
+<div class="formCard">
+    <h2>Super Admin Controls</h2><!--
+    <label for="deleteAdmin">Delete Admin:</label>
+    <form action="{{ url_for('deleteAdmin') }}" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <p>Enter the username of the admin you want to delete below.</p>
+        <input id="deleteAdmin" name="username" placeholder="Username" type="text" required>
+        <button type="submit">Delete Admin</button>
+    </form>
+    <br><br>-->
+    <label for="deleteUser">Delete User:</label>
+    <form action="{{ url_for('deleteUser') }}" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <p>Enter the username of the user you want to delete below. Be careful, this action is irreversible.</p>
+        <input id="deleteUser" name="username" placeholder="Username" type="text" required>
+        <button type="submit">Delete User</button>
+    </form>
+</div>
+{% endif %}
+
+{% endblock %}
