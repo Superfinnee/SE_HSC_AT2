@@ -14,7 +14,7 @@ import hmac
 import hashlib
 import requests
 
-#Checking for git pull on pythonanywhere
+#Checking for git pull on pythonanywhere 2
 
 app = Flask(__name__)
 
