@@ -1,4 +1,4 @@
-from flask import Flask, render_template, redirect, request, session, flash, url_for
+from flask import Flask, render_template, redirect, request, session, flash, url_for, abort
 import sqlite3, os
 import werkzeug
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -9,8 +9,53 @@ from flask_limiter.util import get_remote_address
 from datetime import timedelta
 from bleach import clean
 from flask_wtf.csrf import CSRFProtect
+import subprocess
+import hmac
+import hashlib
+import requests
 
 app = Flask(__name__)
+
+# --- CONFIG ---
+WEBHOOK_SECRET = os.environ.get('WEBHOOK_SECRET', '').encode()
+PA_USERNAME = 'piccolif26'
+PA_API_TOKEN = os.environ.get('PA_API_TOKEN', '')
+PA_DOMAIN = 'piccolif26.pythonanywhere.com'
+REPO_PATH = '/home/piccolif26/SE_HSC_AT2'
+#---------
+
+@app.route('/git-pull', methods=['POST'])
+def git_pull():
+    signature = request.headers.get('X-Hub-Signature-256') or ''
+    expected = 'sha256=' + hmac.new(WEBHOOK_SECRET, request.data, hashlib.sha256).hexdigest()
+    
+    if not hmac.compare_digest(signature, expected):
+        abort(403) # rejects anything that doesn't match
+    
+    #Pull latest code
+    result = subprocess.run(
+        ['git', '-c', REPO_PATH, 'pull'],
+        capture_output=True, text=True
+    )
+    
+    if result.returncode != 0:
+        return f'git pull failed:\n{result.stderr}', 500
+    
+    # Reload the app by making a request to the PA API
+    reload_url = (
+        f'https://www.pythonanywhere.com/api/v0/user/'
+        f'{PA_USERNAME}/webapps/{PA_DOMAIN}/reload/'
+    )
+    pa_response = requests.post(
+        reload_url,
+        headers={'Authorization': f'Token {PA_API_TOKEN}'}
+    )
+    
+    if pa_response.status_code == 200:
+        return 'Deployed successfully', 200
+    else:
+        return f'Failed to reload app: {pa_response.text}', 500
+
 
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=30)
 csrf = CSRFProtect(app)
