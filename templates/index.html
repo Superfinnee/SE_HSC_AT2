@@ -14,6 +14,7 @@
             <th>Image</th>
         </tr>
         {% for ticket in tickets %}
+        {% if ticket[8] == 'Yes' %}
             <tr class="status-{{ ticket[4] | lower }}">
                 {% if ticket[0] == editIndex %}
                     <form action="{{ url_for('saveItem') }}" method="POST">
@@ -70,7 +71,10 @@
                                 <button class="delete-btn" title="Delete" onclick="return confirm('Are you sure you want to close this ticket?')">&#128465;</button>
                             </form>
                         {% else %}
-                            &#128465;
+                            <form class="actionButton" action="{{ url_for('hideTicket') }}" method="POST">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <input type="hidden" name="hide" value="{{ ticket[0] }}">
+                                <button class="delete-btn" title="Hide" onclick="return confirm('Are you sure you want to hide this ticket? This action cannot be undone')">Hide</button>
                         {% endif %}
                     </td>
                     <td>{{ statusDict[ticket[4]] | safe }}</td>
@@ -81,6 +85,7 @@
                     </td>
                 {% endif %}
             </tr>
+        {% endif %}
         {% else %}
             <tr>
                 <td colspan="6" style="text-align:center; padding: 20px; color: #888;">

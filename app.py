@@ -87,8 +87,9 @@ def initDB():
             description TEXT NOT NULL,
             status INTEGER NOT NULL,
             priority TEXT,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            created_at DATETIME NOT NULL,
             imagePath TEXT,
+            show TEXT NOT NULL DEFAULT 'Yes',
             FOREIGN KEY (userID) REFERENCES users(id)
         )
     ''')
@@ -262,6 +263,18 @@ def index():
     userName = cursor.fetchone()
     conn.close()
     return render_template("index.html", statusDict=status, tickets=ticketsList, name=userName[0] if userName else "User", status=userName[1] if userName else None)
+
+@app.route("/hideTicket", methods=["POST"])
+def hideTicket():
+    if 'userID' not in session:
+        return redirect('/login')
+    itemID = escape(request.form.get("hide"))
+    conn = sqlite3.connect('piccoliTicketi.db')
+    cursor = conn.cursor()
+    cursor.execute("UPDATE closedTickets SET show = 'No' WHERE ID = ?", (itemID,))
+    conn.commit()
+    conn.close()
+    return redirect('/')
 
 @app.route("/delete_item", methods=["POST"])
 def delete_item():
