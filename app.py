@@ -153,6 +153,8 @@ def register():
                 flash('Passwords do not match. Please try again.', 'error')
                 return redirect('/register')
             hashedPassword = generate_password_hash(password)
+            if len(fName) > 50 or len(lName) > 50 or len(email) > 254 or len(username) > 30 or len(password) > 128:
+                flash("One/some of your inputs are too long, please try again", "error")
         except werkzeug.exceptions.BadRequestKeyError: # type: ignore
             flash(f'We detected an error, please try again', 'error')
             return redirect('/register')

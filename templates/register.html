@@ -10,19 +10,19 @@
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     
     <label for="fName">First Name</label>
-    <input id="fName" name="fName" placeholder="First Name" type="text" required>
+    <input id="fName" name="fName" placeholder="First Name" type="text" required maxlength=50>
     <br>
     <label for="lName">Last Name</label>
-    <input id="lName" name="lName" placeholder="Last Name" type="text" required>
+    <input id="lName" name="lName" placeholder="Last Name" type="text" required maxlength=50>
     <br>
     <label for="email">Email</label>
-    <input id="email" name="email" placeholder="Email" type="email" required>
+    <input id="email" name="email" placeholder="Email" type="email" required maxlength=254>
     <br>
     <label for="username">Username</label>
-    <input id="username" name="username" placeholder="Username" type="text" required>
+    <input id="username" name="username" placeholder="Username" type="text" required maxlength=30>
     <br>
     <label for="password">Password</label>
-    <input id="password" name="password" placeholder="Password" type="password" required>
+    <input id="password" name="password" placeholder="Password" type="password" required maxlength=128>
     <br>
     <label for="confirmPassword">Confirm Password</label>
     <input id="confirmPassword" name="confirmPassword" placeholder="Confirm Password" type="password" required>
