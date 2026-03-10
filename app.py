@@ -14,6 +14,8 @@ import hmac
 import hashlib
 import requests
 
+#Checking for git pull on pythonanywhere
+
 app = Flask(__name__)
 
 # --- CONFIG ---
@@ -24,38 +26,6 @@ PA_DOMAIN = 'piccolif26.pythonanywhere.com'
 REPO_PATH = '/home/piccolif26/SE_HSC_AT2'
 #---------
 
-@app.route('/git-pull', methods=['POST'])
-def git_pull():
-    signature = request.headers.get('X-Hub-Signature-256') or ''
-    expected = 'sha256=' + hmac.new(WEBHOOK_SECRET, request.data, hashlib.sha256).hexdigest()
-    
-    if not hmac.compare_digest(signature, expected):
-        abort(403) # rejects anything that doesn't match
-    
-    #Pull latest code
-    result = subprocess.run(
-        ['git', '-c', REPO_PATH, 'pull'],
-        capture_output=True, text=True
-    )
-    
-    if result.returncode != 0:
-        return f'git pull failed:\n{result.stderr}', 500
-    
-    # Reload the app by making a request to the PA API
-    reload_url = (
-        f'https://www.pythonanywhere.com/api/v0/user/'
-        f'{PA_USERNAME}/webapps/{PA_DOMAIN}/reload/'
-    )
-    pa_response = requests.post(
-        reload_url,
-        headers={'Authorization': f'Token {PA_API_TOKEN}'}
-    )
-    
-    if pa_response.status_code == 200:
-        return 'Deployed successfully', 200
-    else:
-        return f'Failed to reload app: {pa_response.text}', 500
-
 
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=30)
 csrf = CSRFProtect(app)
@@ -65,10 +35,10 @@ app.config.update(
     SESSION_COOKIE_SAMESITE='Strict' # Prevents cross-site request forgery (CSRF)
 )
 
-@app.before_request
-def enforce_https():
-    if not request.is_secure:
-        return redirect(request.url.replace('http://', 'https://'))
+#@app.before_request
+#def enforce_https():
+#    if not request.is_secure:
+#        return redirect(request.url.replace('http://', 'https://'))
         
     
 def make_session_permanent():
@@ -80,7 +50,7 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 priorities = ['Low', 'Medium', 'High']
 status= {1: 'Open', 2: 'pending', 3: 'In Progress', 4: 'Closed', 5: 'Solved'}
 
-#limiter = Limiter(get_remote_address, app=app, default_limits=["5 per minute"]) ---------- Implemented in the Limiter initialization, not here to avoid interfering with testing and development
+limiter = Limiter(get_remote_address, app=app, default_limits=["5 per minute"])
 
 
 
@@ -138,6 +108,39 @@ def returnAdmin():
         return redirect('/admin')
     return redirect('/')
 
+@app.route('/git-pull', methods=['POST'])
+@csrf.exempt
+def git_pull():
+    signature = request.headers.get('X-Hub-Signature-256') or ''
+    expected = 'sha256=' + hmac.new(WEBHOOK_SECRET, request.data, hashlib.sha256).hexdigest()
+    
+    if not hmac.compare_digest(signature, expected):
+        abort(403) # rejects anything that doesn't match
+    
+    #Pull latest code
+    result = subprocess.run(
+        ['git', '-C', REPO_PATH, 'pull'],
+        capture_output=True, text=True
+    )
+    
+    if result.returncode != 0:
+        return f'git pull failed:\n{result.stderr}', 500
+    
+    # Reload the app by making a request to the PA API
+    reload_url = (
+        f'https://www.pythonanywhere.com/api/v0/user/'
+        f'{PA_USERNAME}/webapps/{PA_DOMAIN}/reload/'
+    )
+    pa_response = requests.post(
+        reload_url,
+        headers={'Authorization': f'Token {PA_API_TOKEN}'}
+    )
+    
+    if pa_response.status_code == 200:
+        return 'Deployed successfully', 200
+    else:
+        return f'Failed to reload app: {pa_response.text}', 500
+
 @app.route("/register", methods=["GET", "POST"])
 def register():
     if request.method == 'POST':
@@ -176,7 +179,7 @@ def register():
     return render_template('register.html')
 
 @app.route('/login', methods=["GET", "POST"])
-#@limiter.limit("5 per minute") ---------------------------------- Implemented in the Limiter initialization, not here to avoid interfering with testing and development
+@limiter.limit("5 per minute")
 def login():
     if request.method == "POST":
         username = escape(request.form['username'])
@@ -496,4 +499,4 @@ def closedTickets():
     return render_template("closedTickets.html", statusDict=status, tickets=tickets, status=userStatus[0] if userStatus else None)
 
 if __name__ == "__main__":
-    app.run(debug=True, ssl_context=("C:\\Users\\piccolif26\\OneDrive\\Documents\\12SE_Web_Dev\\SE_HSC_AT2\\localhost+3.pem", "C:\\Users\\piccolif26\\OneDrive\\Documents\\12SE_Web_Dev\\SE_HSC_AT2\\localhost+3-key.pem"))
+    app.run()
