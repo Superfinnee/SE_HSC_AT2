@@ -37,10 +37,6 @@
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <button type="submit">Manage Users</button>
                 </form>
-                <form class="undoButton" action="{{ url_for("undoDelete") }}" method="POST">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <button type="submit" class="undo-btn" title="Undo Delete">Undo Delete</button>
-                </form>
                 <form class="closedTickets" action="{{ url_for("closedTickets") }}" method="GET">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <button type="submit" title="View Closed Tickets">View Closed Tickets</button>
