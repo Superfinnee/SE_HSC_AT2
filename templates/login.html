@@ -4,7 +4,11 @@
 
 {% block body %}
 
-<h1>Login</h1>
+<div class="title">
+    <h1>Welcome to Piccoli Ticketi</h1>
+</div>
+
+<h2>Login</h2>
 <div class="formCard">
     <form action="/login" method="POST">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
