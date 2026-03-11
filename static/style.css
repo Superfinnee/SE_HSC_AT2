@@ -176,6 +176,15 @@ button[type="submit"]:hover {
     background-color: #357abd;
 }
 
+button.solve-btn, button.delete-btn, button.edit-btn {
+    width: 40px;
+    height: 40px;
+    background-color: #4a90d9;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
 
 /* ============================================================
    FLASH MESSAGES
@@ -322,6 +331,11 @@ table.tickets td:nth-child(8) {
 
 table.closedTickets th:nth-child(5),
 table.closedTickets td:nth-child(5) {width: 6%;}
+
+table.closedTickets th:nth-child(6),
+table.closedTickets td:nth-child(6) {
+    width: 10%;
+}
 
 
 
