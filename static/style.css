@@ -124,6 +124,26 @@ textarea {
     box-sizing: border-box; /* Include padding in width calculation so inputs don't overflow their container */
 }
 
+input.commentBox {
+    display: block;
+    width: 90%;
+    padding: 10px;
+    margin: 8px 0 16px 0;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+div.commentText {
+    display: flex;
+    justify-content: center;
+}
+
+div.postComment {
+    display: flex;
+    justify-content: center;
+}
+
 /* Override input width inside table cells so edit-mode inputs don't stretch the column */
 td input[type="text"] {
     width: auto;
@@ -176,6 +196,12 @@ button[type="submit"]:hover {
     background-color: #357abd;
 }
 
+button.postComment {
+    width: 50%;
+    text-align: center;
+    cursor: pointer;
+}
+
 button.solve-btn, button.delete-btn, button.edit-btn {
     width: 40px;
     height: 40px;
@@ -185,6 +211,8 @@ button.solve-btn, button.delete-btn, button.edit-btn {
     border-radius: 4px;
     cursor: pointer;
 }
+
+
 
 /* ============================================================
    FLASH MESSAGES
@@ -230,13 +258,17 @@ table {
     border: solid 1px;
 }
 
-table.tickets, table.closedTickets table.users {
+table.tickets, table.closedTickets, table.users {
     table-layout: fixed;  /* Enforces column widths — without this, browser ignores width hints */
     width: 100%;
     border-collapse: collapse;
     min-width: 600px;     /* Prevent table from collapsing below a readable width */
 }
 
+table.comments {
+    border-color: chocolate;
+    border: solid 1px;
+}
 
 
 table.tickets th,
@@ -247,6 +279,25 @@ table.closedTickets td {
     text-align: center;
     border-bottom: 1px solid #ddd;
     border-left: 1px solid #ddd;
+}
+
+table.comments th, 
+table.comments td {
+    padding: 10px 0;
+    border-bottom: 1px solid #ddd;
+    border-left: 1px solid #ddd;
+}
+
+table.comments th:nth-child(1),
+table.comments td:nth-child(1) {
+    text-align: center;
+    width: 10%;
+}
+
+table.comments th:nth-child(2),
+table.comments td:nth-child(2) {
+    padding-left: 4px;
+    width: 90%;
 }
 
 table.users th:nth-child(1),

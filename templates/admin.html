@@ -35,11 +35,11 @@
                     <!--Change status-->
                         <td>
                             <select name="newStatus">
-                                <option value="{{ 1 }}" {% if ticket[4] == '1' %}selected{% endif %}>{{ statusDict[1] }}</option>
-                                <option value="{{ 2 }}" {% if ticket[4] == '2' %}selected{% endif %}>{{ statusDict[2] }}</option>
-                                <option value="{{ 3 }}" {% if ticket[4] == '3' %}selected{% endif %}>{{ statusDict[3] }}</option>
-                                <option value="{{ 4 }}" {% if ticket[4] == '4' %}selected{% endif %}>{{ statusDict[4] }}</option>
-                                <option value="{{ 5 }}" {% if ticket[4] == '5' %}selected{% endif %}>{{ statusDict[5] }}</option>
+                                <option value="{{ 1 }}" {% if ticket[4] == 1 %}selected{% endif %}>{{ statusDict[1] }}</option>
+                                <option value="{{ 2 }}" {% if ticket[4] == 2 %}selected{% endif %}>{{ statusDict[2] }}</option>
+                                <option value="{{ 3 }}" {% if ticket[4] == 3 %}selected{% endif %}>{{ statusDict[3] }}</option>
+                                <option value="{{ 4 }}" {% if ticket[4] == 4 %}selected{% endif %}>{{ statusDict[4] }}</option>
+                                <option value="{{ 5 }}" {% if ticket[4] == 5 %}selected{% endif %}>{{ statusDict[5] }}</option>
                             </select>
                         </td>
                     <!--Change priority-->
@@ -54,7 +54,7 @@
                         <td>
                             <button type="submit" class="save-btn" title="save">Save</button>
                         </td>
-                            </form>
+                    </form>
                 <!--Delete Button-->
                     <td class="delete">
                         <form class="actionButton" action="{{ url_for('delete_item') }}" method="POST">
@@ -77,6 +77,7 @@
                             <img src="{{ url_for('static', filename=ticket[7]) }}" alt="Ticket Attachment">
                         {% endif %}
                     </td>
+                
             <!-----------------------End of edit mode------------------>
                 {% else %}
                 <!--For when the list is not in edit mode-->
@@ -120,5 +121,44 @@
         {% endfor %}
     </table>
 </div>
-
+<br>
+<!--Comments-->
+{% if edit == True %}
+<div class="Comments">
+    <p>This ticket was created by {{ author }}</p>
+    <br><br>
+    <table class="comments">
+        <div class="comments">
+            <tr>
+                <th>Name</th>
+                <th>Comment</th>
+            </tr>
+            {% for comment in comments %}
+                <tr>
+                    <td>
+                        {{ comment[4] | safe}}
+                    </td>
+                    <td class="comment">
+                        {{ comment[3] | safe}}
+                    </td>
+                </tr>
+            {% endfor %}
+        </div>
+        <div class="commentText"
+            <tr>
+                <form action="{{ url_for('addComment') }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="ticketID" value="{{ editIndex}}">
+                    <input type="textbox" class="commentBox" name="addComment" placeholder="Add a new comment...">
+        </div>
+                    <br>
+        <div class="postComment">
+                    <button type="submit" class="postComment" title="Post">Post</button>
+        </div>
+                </form>
+            </tr>
+        
+    </table>
+</div>
+{% endif %}
 {% endblock %}

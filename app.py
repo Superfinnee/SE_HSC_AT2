@@ -9,7 +9,6 @@ from markupsafe import escape
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from datetime import timedelta
-from bleach import clean
 from flask_wtf.csrf import CSRFProtect
 import subprocess
 import hmac
@@ -51,7 +50,7 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 priorities = ['Low', 'Medium', 'High']
 status= {1: 'Open', 2: 'pending', 3: 'In Progress', 4: 'Closed', 5: 'Solved'}
 
-limiter = Limiter(get_remote_address, app=app, default_limits=["5 per minute"])
+limiter = Limiter(get_remote_address, app=app, default_limits=["15 per minute"])
 
 
 
@@ -83,7 +82,7 @@ def initDB():
     ''')
     cursor.execute('''
             CREATE TABLE IF NOT EXISTS closedTickets(
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id INTEGER PRIMARY KEY,
             userID INTEGER NOT NULL,
             title TEXT NOT NULL,
             description TEXT NOT NULL,
@@ -95,6 +94,18 @@ def initDB():
             FOREIGN KEY (userID) REFERENCES users(id)
         )
     ''')
+    cursor.execute('''
+                   CREATE TABLE IF NOT EXISTS comments(
+                       id INTEGER PRIMARY KEY AUTOINCREMENT,
+                       userID INTEGER NOT NULL,
+                       ticketID INTEGER NOT NULL,
+                       comment TEXT NOT NULL,
+                       name TEXT NOT NULL,
+                       datecreated DATETIME DEFAULT CURRENT_TIMESTAMP,
+                       FOREIGN KEY (userID) REFERENCES users(id),
+                       FOREIGN KEY (ticketID) REFERENCES tickets(id)
+                   )
+                   ''')
     conn.commit()
     conn.close()
     
@@ -118,6 +129,7 @@ def checkAdmin():
     if not userStatus or userStatus[0] != 'admin':
         conn.close()
         flash("You do not have permission to acess this feature.", "error")
+    conn.close()
     return userStatus[0]
 
 @app.route('/git-pull', methods=['POST'])
@@ -155,6 +167,7 @@ def register():
             hashedPassword = generate_password_hash(password)
             if len(fName) > 50 or len(lName) > 50 or len(email) > 254 or len(username) > 30 or len(password) > 128:
                 flash("One/some of your inputs are too long, please try again", "error")
+                return redirect('/register')
         except werkzeug.exceptions.BadRequestKeyError: # type: ignore
             flash(f'We detected an error, please try again', 'error')
             return redirect('/register')
@@ -303,7 +316,10 @@ def delete_item():
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM tickets WHERE ID = ?", (itemID,))
     item = cursor.fetchone()
-    cursor.execute("INSERT INTO closedTickets (userID, title, description, status, priority, created_at, imagePath) VALUES (?, ?, ?, ?, ?, ?, ?)", (item[1], item[2], item[3], 4, item[5], item[6], item[7]))
+    if not item:
+        flash("We're sorry, an internal error has occured. Please try again", "error")
+        return returnAdmin()
+    cursor.execute("INSERT INTO closedTickets (id, userID, title, description, status, priority, created_at, imagePath) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", (item[0], item[1], item[2], item[3], 4, item[5], item[6], item[7]))
     conn.commit()
     cursor.execute("DELETE FROM tickets WHERE ID = ?", (itemID,))
     conn.commit()
@@ -319,7 +335,7 @@ def undoDelete():
     itemID = request.form.get("undo")
     cursor.execute("SELECT * FROM closedTickets WHERE ID = ?", (itemID,))
     item = cursor.fetchone()
-    cursor.execute("INSERT INTO tickets (userID, title, description, status, priority, created_at, imagePath) VALUES (?, ?, ?, ?, ?, ?, ?)", (item[1], item[2], item[3], 1, item[5], item[6], item[7]))
+    cursor.execute("INSERT INTO tickets (id, userID, title, description, status, priority, created_at, imagePath) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", (item[0], item[1], item[2], item[3], 1, item[5], item[6], item[7]))
     conn.commit()
     cursor.execute("DELETE FROM closedTickets WHERE ID = ?", (itemID,))
     conn.commit()
@@ -336,16 +352,19 @@ def editItem():
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM tickets WHERE ID = ?", (editID,))
     tickets = cursor.fetchall()
-    conn.close()
-    conn = sqlite3.connect('piccoliTicketi.db')
-    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM comments WHERE ticketID = ?", (tickets[0][0],))
+    comments = cursor.fetchall()
     cursor.execute("SELECT fname, status FROM users WHERE id = ?", (session['userID'],))
     userStatus = cursor.fetchone()
+    cursor.execute("SELECT fName, lName FROM users AS u JOIN tickets AS t ON t.userID = u.id WHERE t.id = ?", (editID,))
+    authorList = cursor.fetchone()
+    author = authorList[0] + " " + authorList[1]
     conn.close()
     print(tickets[0], editID)
+    edit = True
     if userStatus and userStatus[1] == 'admin':
-        return render_template('admin.html', statusDict=status, tickets=tickets, editIndex=editID, priority=priorities, name=userStatus[0] if userStatus else None, status=userStatus[1] if userStatus else None)
-    return render_template("index.html", statusDict=status, tickets=tickets, editIndex=editID, name=userStatus[0] if userStatus else None, status=userStatus[1] if userStatus else None)
+        return render_template('admin.html', statusDict=status, tickets=tickets, editIndex=editID, priority=priorities, name=userStatus[0] if userStatus else None, status=userStatus[1] if userStatus else None, comments=comments, author=author, edit=True)
+    return render_template("index.html", statusDict=status, tickets=tickets, editIndex=editID, name=userStatus[0] if userStatus else None, status=userStatus[1] if userStatus else None, comments=comments, edit=edit)
 
 @app.route("/saveItem", methods=["POST"])
 def saveItem():
@@ -390,12 +409,39 @@ def solve_item():
         return redirect('/')
     cursor.execute("SELECT * FROM tickets WHERE ID = ?", (itemID,))
     item = cursor.fetchone()
-    cursor.execute("INSERT INTO closedTickets (userID, title, description, status, priority, created_at, imagePath) VALUES (?, ?, ?, ?, ?, ?, ?)", (item[1], item[2], item[3], 5, item[5], item[6], item[7]))
+    cursor.execute("INSERT INTO closedTickets (id, userID, title, description, status, priority, created_at, imagePath) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", (item[0], item[1], item[2], item[3], 5, item[5], item[6], item[7]))
     conn.commit()
     cursor.execute("DELETE FROM tickets WHERE ID = ?", (itemID,))
     conn.commit()
     conn.close()
     return returnAdmin()
+
+@app.route("/addComment", methods=["POST"])
+def addComment():
+    if 'userID' not in session:
+        return redirect("/")
+    comment = escape(request.form.get("addComment"))
+    ticketID = int(escape(request.form.get('ticketID')))
+    conn = sqlite3.connect('piccoliTicketi.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT fName FROM users WHERE id = ?", (session['userID'],))
+    fName = cursor.fetchone()
+    cursor.execute("INSERT INTO comments (userID, ticketID, comment, name) VALUES (?, ?, ?, ?)", (session['userID'], ticketID, comment, fName[0]))
+    conn.commit()
+    cursor.execute("SELECT * FROM tickets WHERE ID = ?", (ticketID,))
+    tickets = cursor.fetchall()
+    cursor.execute("SELECT fname, status FROM users WHERE id = ?", (session['userID'],))
+    userStatus = cursor.fetchone()
+    cursor.execute("SELECT * FROM comments WHERE ticketID = ?", (ticketID,))
+    comments = cursor.fetchall()
+    cursor.execute("SELECT fName, lName FROM users AS u JOIN tickets AS t ON t.userID = u.id WHERE t.id = ?", (ticketID,))
+    authorList = cursor.fetchone()
+    author = authorList[0] + " " + authorList[1]
+    conn.close()
+    edit = True
+    if userStatus and userStatus[1] == 'admin':
+        return render_template('admin.html', statusDict=status, tickets=tickets, editIndex=ticketID, priority=priorities, name=userStatus[0] if userStatus else None, status=userStatus[1] if userStatus else None, comments=comments, author=author, edit=True)
+    return render_template("index.html", statusDict=status, tickets=tickets, editIndex=ticketID, name=userStatus[0] if userStatus else None, status=userStatus[1] if userStatus else None, comments=comments, edit=edit)
 
 @app.route("/admin", methods=["GET", "POST"])
 def admin():
@@ -508,4 +554,4 @@ def closedTickets():
     return render_template("closedTickets.html", statusDict=status, tickets=tickets, status=userStatus[0] if userStatus else None)
 
 if __name__ == "__main__":
-    app.run()
+    app.run(debug=True)

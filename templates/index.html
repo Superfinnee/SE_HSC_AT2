@@ -2,6 +2,8 @@
 
 {% block body %}
 
+{% set ns = namespace(ticketsShown = False) %}
+
 <h1>Welcome, {{ name }}!</h1>
 <div class="tickets-container">
     <table class="tickets">
@@ -44,8 +46,10 @@
                         {% endif %}
                     </td>
 
+
                 {% else %}
-            
+                    {% set ns.ticketsShown = True %}
+                    {{ ticketsShown }}
                     <td>{{ ticket[2] | safe }}</td>
                     <td>{{ ticket[3] | safe }}</td>
                     <td class="edit">
@@ -75,6 +79,7 @@
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 <input type="hidden" name="hide" value="{{ ticket[0] }}">
                                 <button class="delete-btn" title="Hide" onclick="return confirm('Are you sure you want to hide this ticket? This action cannot be undone')">Hide</button>
+                            </form>
                         {% endif %}
                     </td>
                     <td>{{ statusDict[ticket[4]] | safe }}</td>
@@ -86,16 +91,54 @@
                 {% endif %}
             </tr>
         {% endif %}
-        {% else %}
+        {% endfor %}
+        {% if not ns.ticketsShown %}
             <tr>
                 <td colspan="6" style="text-align:center; padding: 20px; color: #888;">
                     You have no tickets yet. 
                     <a href="/createTicket">Create your first one here.</a>
                 </td>
             </tr>
-        {% endfor %}
-        
-    
+        {% endif %}
     </table>
 </div>
+
+{% if edit == True %}
+<div class="Comments">
+    <br><br>
+    <table class="comments">
+        <div class="commentsTable">
+            <tr>
+                <th>Name</th>
+                <th>Comment</th>
+            </tr>
+            {% for comment in comments %}
+                <tr>
+                    <td>
+                        {{ comment[4] | safe}}
+                    </td>
+                    <td class="Comment">
+                        {{ comment[3] | safe}}
+                    </td>
+                </tr>
+            {% endfor %}
+        </div>
+        <div class="commentText"
+            <tr>
+                <form action="{{ url_for('addComment') }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="ticketID" value="{{ editIndex}}">
+                    <input type="textbox" class="commentBox" name="addComment" placeholder="Add a new comment...">
+        </div>
+                    <br>
+        <div class="postComment">
+                    <button type="submit" class="postComment" title="Post">Post</button>
+        </div>
+                </form>
+            </tr>
+        
+    </table>
+</div>
+{% endif %}
+
 {% endblock %}
