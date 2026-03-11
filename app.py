@@ -215,12 +215,12 @@ def login():
             flash('Login successful!', 'success')
             cursor.execute("SELECT status FROM users WHERE id = ?", (session['userID'],))
             userStatus = cursor.fetchone()
-            if userStatus and userStatus[0] == 'admin':
-                conn.close()
-                return redirect('/admin')
             conn.close()
+            if userStatus and userStatus[0] == 'admin':
+                return redirect('/admin')
             return redirect('/')
         flash ("Invalid username or password", "error")
+        conn.close()
     return render_template('login.html')
 
 @app.route('/logout', methods=["POST"])
@@ -457,27 +457,6 @@ def admin():
     name = cursor.fetchone()
     conn.close()
     return render_template("admin.html", statusDict=status, tickets=tickets, name=name[0] if name else None, status=name[1] if name else None)
-
-@app.route("/deleteAdmin", methods=["POST"])
-def deleteAdmin():
-    if 'userID' not in session:
-        return redirect('/login')
-    username = escape(request.form.get("username"))
-    if username == "SuperFinnee":
-        flash("Don't be silly you absolute idiot.", "error")
-        return redirect('/admin')
-    conn = sqlite3.connect('piccoliTicketi.db')
-    cursor = conn.cursor()
-    cursor.execute("SELECT username FROM users WHERE id = ?", (session['userID'],))
-    operatorUsername = cursor.fetchone()
-    if not operatorUsername or operatorUsername[0] != 'SuperFinnee':
-        conn.close()
-        flash("You do not have permission to perform this action.", "error")
-        return redirect('/')
-    cursor.execute("UPDATE users SET status = 'user' WHERE username = ?", (username,))
-    conn.commit()
-    conn.close()
-    return redirect('/admin')
 
 @app.route("/deleteUser", methods=["POST"])
 def deleteUser():

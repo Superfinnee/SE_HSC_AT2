@@ -23,10 +23,10 @@
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <td>
                             <input type="hidden" name="editIndex" value="{{ ticket[0] }}">
-                            <input type="text" name="newItem" value="{{ ticket[2] }}">
+                            <input type="text" name="newItem" value="{{ ticket[2] | safe}}">
                         </td>
                         <td>
-                            <input type="text" name="newDescription" value="{{ ticket[3] }}">
+                            <input type="text" name="newDescription" value="{{ ticket[3] | safe }}">
                         </td>
                         <td>
                             <button type="submit" class="save-btn" title="save">Save</button>
@@ -127,7 +127,7 @@
             <tr>
                 <form action="{{ url_for('addComment') }}" method="POST">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <input type="hidden" name="ticketID" value="{{ editIndex}}">
+                    <input type="hidden" name="ticketID" value="{{ editIndex }}">
                     <input type="textbox" class="commentBox" name="addComment" placeholder="Add a new comment...">
         </div>
                     <br>
