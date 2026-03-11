@@ -25,20 +25,16 @@
                 <button type="submit">Logout</button>
             </form>
             <form action="{{ url_for('index') }}" method="get">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit">Back to Dashboard</button>
             </form>
             <form action="{{ url_for('createTicket') }}" method="get">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit">Create Ticket</button>
             </form>
             {% if status == "admin" %}
                 <form action="{{ url_for('manageUsers') }}" method="get">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <button type="submit">Manage Users</button>
                 </form>
                 <form class="closedTickets" action="{{ url_for("closedTickets") }}" method="GET">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <button type="submit" title="View Closed Tickets">View Closed Tickets</button>
                 </form>
             {% endif %}

@@ -207,8 +207,9 @@ button[type="submit"]:hover {
 
 
 /* ============================================================
-   TICKET TABLE
+   TABLES
    Styles for the main ticket list on both user and admin views
+   as well as the user management table for admins
    ============================================================ */
 
 /* Generic table reset for any non-ticket tables */
@@ -220,12 +221,14 @@ table {
     border: solid 1px;
 }
 
-table.tickets, table.closedTickets {
+table.tickets, table.closedTickets table.users {
     table-layout: fixed;  /* Enforces column widths — without this, browser ignores width hints */
     width: 100%;
     border-collapse: collapse;
     min-width: 600px;     /* Prevent table from collapsing below a readable width */
 }
+
+
 
 table.tickets th,
 table.tickets td,
@@ -237,7 +240,39 @@ table.closedTickets td {
     border-left: 1px solid #ddd;
 }
 
-table.tickets tr:hover, table.closedTickets tr:hover {
+table.users th:nth-child(1),
+table.users td:nth-child(1),
+table.users th:nth-child(2),
+table.users td:nth-child(2),
+table.users th:nth-child(5),
+table.users td:nth-child(5) {
+    width: 10%;
+}
+
+table.users th:nth-child(3),
+table.users td:nth-child(3) {
+    width: 30%;
+}
+
+table.users th:nth-child(4),
+table.users td:nth-child(4) {
+    width: 20%;
+}
+
+table.users th:nth-child(6),
+table.users td:nth-child(6) {
+    width: 20%;
+}
+
+table.users {
+    text-align: center;
+}
+
+button.admin {
+    width: 126px;
+}
+
+table tr:hover {
     background-color: #f1f5fb;  /* Subtle row highlight for easier scanning */
 }
 
@@ -287,6 +322,8 @@ table.tickets td:nth-child(8) {
 
 table.closedTickets th:nth-child(5),
 table.closedTickets td:nth-child(5) {width: 6%;}
+
+
 
 /* --- Ticket status row colours --- */
 

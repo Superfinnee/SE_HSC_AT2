@@ -3,7 +3,7 @@
 {% block body %}
 
 <div class="userTable">
-    <table>
+    <table class="users">
         <tr>
             <th>First Name</th>
             <th>Last Name</th>
@@ -24,13 +24,13 @@
                         <form action="{{ url_for('toggleAdmin') }}" method="POST">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <input type="hidden" name="username" value="{{ user[3] }}">
-                            <button type="submit">Revoke Admin</button>
+                            <button class="admin" type="submit">Revoke Admin</button>
                         </form>
                     {% else %}
                         <form action="{{ url_for('toggleAdmin') }}" method="POST">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <input type="hidden" name="username" value="{{ user[3] }}">
-                            <button type="submit">Make Admin</button>
+                            <button class="admin" type="submit">Make Admin</button>
                         </form>
                     {% endif %}
                 </td>
