@@ -1,64 +1,101 @@
+/*
+ * style.css — Piccoli Ticketi: Global Stylesheet
+ *
+ * PURPOSE:
+ *   Provides all visual styling for the Piccoli Ticketi web application.
+ *   This single stylesheet is shared across all pages via layout.html,
+ *   maintaining visual consistency and reducing duplication (DRY principle).
+ *
+ * STRUCTURE:
+ *   1. Base & Typography       — font, colour, spacing defaults
+ *   2. Layout                  — page-level containers
+ *   3. Navigation Bar          — top action bar (Logout, Create Ticket, etc.)
+ *   4. Forms                   — login, register, createTicket, createAdmin
+ *   5. Buttons                 — submit, action icon buttons
+ *   6. Flash Messages          — success/error notification banners
+ *   7. Tables                  — ticket list, user table, comments table
+ *   8. Responsive (≤872px)     — mobile/tablet adjustments
+ *
+ * UI/UX PRINCIPLES IMPLEMENTED (SE-12-03):
+ *   - Responsive design via overflow-x and @media queries (mobile-first consideration)
+ *   - Consistent colour coding of ticket statuses for at-a-glance triage (UX)
+ *   - Inter font chosen for readability at small sizes on all devices (ACCESSIBILITY)
+ *   - Subtle hover states on table rows and buttons guide user interaction
+ *   - Flash message colours follow standard web conventions (red=error, green=success)
+ */
+
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+/* Inter: a modern sans-serif optimised for on-screen legibility at all sizes.
+   Arial is declared as a fallback in case the Google Fonts CDN is unreachable. */
+
 
 /* ============================================================
-   BASE & TYPOGRAPHY
-   Global resets and font settings applied across all pages
+   1. BASE & TYPOGRAPHY
+   Global resets and font settings applied across all pages.
+   margin/padding: 0 removes browser default spacing that would otherwise
+   create inconsistent whitespace across different browsers.
    ============================================================ */
 
 body {
     font-family: 'Inter', Arial, sans-serif; /* Inter for modern readability, Arial as fallback */
-    background-color: #f4f6f9;              /* Soft off-white background to reduce eye strain */
-    color: #333;
+    background-color: #f4f6f9;              /* Soft off-white — reduces eye strain vs pure white */
+    color: #333;                            /* Dark grey instead of black — softer contrast */
     margin: 0;
     padding: 0;
 }
 
+/* Centre all headings and labels for visual balance across form and dashboard pages */
 h1, h2, h3, h4, label, p {
-    text-align: center;   /* Centre all headings and form labels across the app */
+    text-align: center;
     align-items: center;
 }
 
 label {
     font-weight: bold;
-    font-size: 0.9rem;
+    font-size: 0.9rem;   /* Slightly smaller than body text — hierarchically subordinate */
 }
 
 
 /* ============================================================
-   LAYOUT
-   Page-level structural containers
+   2. LAYOUT
+   Page-level structural containers that control content width and positioning.
    ============================================================ */
 
 .wrapper {
-    max-width: 960px;    /* Cap content width on very large screens */
-    margin: 40px auto;   /* Centre the wrapper horizontally with top spacing */
-    padding: 0 20px;     /* Side padding to prevent content touching screen edges */
+    max-width: 960px;    /* Prevents content stretching too wide on large monitors (UX) */
+    margin: 40px auto;   /* Horizontally centres the wrapper; top margin provides breathing room */
+    padding: 0 20px;     /* Side padding prevents text from pressing against viewport edges */
 }
 
 .tickets-container {
-    overflow-x: auto;    /* Allows horizontal scrolling on small screens instead of breaking layout */
+    overflow-x: auto;    /* Enables horizontal scrolling on narrow screens instead of breaking layout.
+                            This is key to responsive design — the table remains fully functional
+                            on mobile without being crushed (RESPONSIVE UI/UX). */
     width: 100%;
 }
 
 
 /* ============================================================
-   NAVIGATION BAR
-   The top action bar containing Logout, Create Ticket, etc.
+   3. NAVIGATION BAR
+   The top action bar rendered by layout.html containing Logout,
+   Create Ticket, Manage Users, View Closed Tickets.
+   Uses flexbox for horizontal, wrapping layout (RESPONSIVE).
    ============================================================ */
 
 .logoutContainer {
     display: flex;
     flex-direction: row;
-    flex-wrap: wrap;        /* Wrap buttons onto next line on narrow screens */
+    flex-wrap: wrap;        /* Wraps buttons to the next line on narrow screens — prevents overflow */
     gap: 10px;
     padding: 12px 16px;
     margin-bottom: 20px;
     background-color: white;
-    border-bottom: 1px solid #ddd;
+    border-bottom: 1px solid #ddd;  /* Subtle separator visually anchors the nav bar (UX) */
     align-items: center;
 }
 
-/* Override the global form card styles for forms inside the nav bar */
+/* Override the global form card styles for forms inside the nav bar.
+   Without this, forms inside .logoutContainer would inherit card padding/shadow. */
 .logoutContainer form {
     display: inline;
     margin: 0;
@@ -69,24 +106,26 @@ label {
     padding: 8px 16px;
     border-radius: 4px;
     border: 1px solid #ccc;
-    background: #4a90d9;
+    background: #4a90d9;       /* Blue — consistent primary action colour throughout the app */
     color: white;
     cursor: pointer;
-    white-space: nowrap;   /* Prevent button text from wrapping mid-word */
+    white-space: nowrap;       /* Prevents button labels from wrapping mid-word */
     font-size: 0.9rem;
 }
 
 .logoutContainer button:hover {
-    background-color: #e8eef7;
+    background-color: #e8eef7; /* Light blue hover feedback — indicates interactivity (UX) */
 }
 
 
 /* ============================================================
-   FORMS
-   Styles for login, register, createTicket, createAdmin pages
+   4. FORMS
+   Styles for standalone forms: login, register, createTicket, createAdmin.
    ============================================================ */
 
-/* Reset all forms globally — prevents card styles leaking into table action forms */
+/* Global form reset — prevents card styles (background, padding, shadow) from
+   leaking into action button forms inside table cells. Without this reset,
+   every <form> in the table would render as a visible card. */
 form {
     background: none;
     padding: 0;
@@ -96,21 +135,26 @@ form {
     margin: 0;
 }
 
-/* Card container for standalone forms (login, register, createAdmin) */
+/* Card container for standalone forms (login, register, createAdmin, createTicket).
+   The elevated card style draws attention to the form and separates it from the
+   page background — a standard UX pattern for authentication flows. */
 .formCard {
     background: white;
     padding: 24px;
     border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1); /* Subtle shadow to lift the card off the background */
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1); /* Subtle shadow lifts the card off the background */
     max-width: 400px;
-    margin: 0 auto;                         /* Centre the card on the page */
+    margin: 0 auto;                         /* Centre the card horizontally on the page */
 }
 
+/* Full-width submit buttons inside form cards improve tap target size on mobile (ACCESSIBILITY) */
 .formCard button[type="submit"] {
-    width: 100%;   /* Full-width submit button inside form cards only */
+    width: 100%;
 }
 
-/* Standard text inputs, password fields, email fields and textareas */
+/* Standard text, password, email inputs and textareas:
+   display: block and width: 100% make them stack vertically and fill the form card.
+   box-sizing: border-box ensures padding doesn't cause the input to overflow its container. */
 input[type="text"],
 input[type="password"],
 input[type="email"],
@@ -121,9 +165,11 @@ textarea {
     margin: 8px 0 16px 0;
     border: 1px solid #ccc;
     border-radius: 4px;
-    box-sizing: border-box; /* Include padding in width calculation so inputs don't overflow their container */
+    box-sizing: border-box; /* Padding included in width — prevents overflow (CSS box model) */
 }
 
+/* Comment input box — slightly narrower than full-width to allow visual breathing room
+   and to align with the centred layout of the comment section */
 input.commentBox {
     display: block;
     width: 90%;
@@ -134,6 +180,7 @@ input.commentBox {
     box-sizing: border-box;
 }
 
+/* Centre the comment input and post button horizontally using flexbox */
 div.commentText {
     display: flex;
     justify-content: center;
@@ -144,7 +191,8 @@ div.postComment {
     justify-content: center;
 }
 
-/* Override input width inside table cells so edit-mode inputs don't stretch the column */
+/* Override input width inside table cells — without this, edit-mode text inputs
+   would stretch their entire column to 100%, breaking the table layout */
 td input[type="text"] {
     width: auto;
     display: inline;
@@ -153,7 +201,8 @@ td input[type="text"] {
     box-sizing: border-box;
 }
 
-/* Override form styles inside table cells to prevent action button forms from taking up space */
+/* Override form styles inside table cells to prevent action button forms (edit/delete/solve)
+   from taking up vertical space or inheriting card padding */
 td form {
     display: inline;
     width: auto;
@@ -161,14 +210,14 @@ td form {
     padding: 0;
 }
 
-/* Inline forms inside table action cells (edit, delete, solve buttons) */
+/* Utility class for inline forms inside table action cells */
 .actionButton {
     display: inline;
     margin: 0;
     padding: 0;
 }
 
-/* Utility class for standalone input controls (e.g. in createAdmin) */
+/* Utility class for standalone input controls outside of forms (e.g. createAdmin page) */
 .control {
     padding: 10px;
     margin: 8px 0 16px 0;
@@ -179,10 +228,12 @@ td form {
 
 
 /* ============================================================
-   BUTTONS
-   Global submit button styles — nav bar buttons override these
+   5. BUTTONS
+   Global submit button base styles.
+   Navigation bar buttons and icon buttons override these where necessary.
    ============================================================ */
 
+/* Primary submit button — blue background consistent with the brand colour */
 button[type="submit"] {
     background-color: #4a90d9;
     color: white;
@@ -193,15 +244,18 @@ button[type="submit"] {
 }
 
 button[type="submit"]:hover {
-    background-color: #357abd;
+    background-color: #357abd; /* Darker blue on hover — confirms interactivity (UX) */
 }
 
+/* Post comment button — centred and wider than action icon buttons for usability */
 button.postComment {
     width: 50%;
     text-align: center;
     cursor: pointer;
 }
 
+/* Icon action buttons (Edit ✏, Delete 🗑, Solve ✓) — fixed 40x40px for consistent
+   touch target sizing. Square shape matches the icon glyph visual weight. */
 button.solve-btn, button.delete-btn, button.edit-btn {
     width: 40px;
     height: 40px;
@@ -213,10 +267,11 @@ button.solve-btn, button.delete-btn, button.edit-btn {
 }
 
 
-
 /* ============================================================
-   FLASH MESSAGES
-   Success and error notification banners shown after actions
+   6. FLASH MESSAGES
+   Success and error notification banners rendered by layout.html.
+   Colour conventions follow established web standards (red=error, green=success)
+   ensuring immediate comprehension without needing to read the text (UX).
    ============================================================ */
 
 .flash-messages {
@@ -227,15 +282,17 @@ button.solve-btn, button.delete-btn, button.edit-btn {
     padding: 12px 16px;
     border-radius: 6px;
     margin-bottom: 10px;
-    font-weight: 500;
+    font-weight: 500;     /* Medium weight — prominent without being aggressive */
 }
 
+/* Error state: red — universally understood as a warning/failure signal */
 .error {
     color: #721c24;
     background-color: #f8d7da;
     border: 1px solid #f5c6cb;
 }
 
+/* Success state: green — confirms an action completed as expected */
 .success {
     color: #155724;
     background-color: #d4edda;
@@ -244,25 +301,28 @@ button.solve-btn, button.delete-btn, button.edit-btn {
 
 
 /* ============================================================
-   TABLES
-   Styles for the main ticket list on both user and admin views
-   as well as the user management table for admins
+   7. TABLES
+   Styles for the ticket list (user and admin views), the closed tickets
+   archive, and the user management table.
    ============================================================ */
 
-/* Generic table reset for any non-ticket tables */
+/* Generic table reset — applies to any table not explicitly classed */
 table {
     width: 100%;
-    border-collapse: collapse;
+    border-collapse: collapse; /* Removes double borders between cells */
     margin-top: 20px;
     border-color: chocolate;
     border: solid 1px;
 }
 
+/* table-layout: fixed enforces declared column widths.
+   Without this, the browser auto-sizes columns based on content, which
+   causes the action columns to expand and waste space (UX). */
 table.tickets, table.closedTickets, table.users {
-    table-layout: fixed;  /* Enforces column widths — without this, browser ignores width hints */
+    table-layout: fixed;
     width: 100%;
     border-collapse: collapse;
-    min-width: 600px;     /* Prevent table from collapsing below a readable width */
+    min-width: 600px; /* Minimum readable width — below this, horizontal scroll activates */
 }
 
 table.comments {
@@ -270,7 +330,7 @@ table.comments {
     border: solid 1px;
 }
 
-
+/* Shared cell padding and alignment for ticket and closed-ticket tables */
 table.tickets th,
 table.tickets td,
 table.closedTickets th,
@@ -281,92 +341,111 @@ table.closedTickets td {
     border-left: 1px solid #ddd;
 }
 
-table.comments th, 
+/* Comment table cell styles — left-aligned comment text for readability */
+table.comments th,
 table.comments td {
     padding: 10px 0;
     border-bottom: 1px solid #ddd;
     border-left: 1px solid #ddd;
 }
 
+/* Name column: narrow and centred — just displays a short first name */
 table.comments th:nth-child(1),
 table.comments td:nth-child(1) {
     text-align: center;
     width: 10%;
 }
 
+/* Comment column: wide with left padding for readability of longer text */
 table.comments th:nth-child(2),
 table.comments td:nth-child(2) {
     padding-left: 4px;
     width: 90%;
 }
 
+/* User table column widths — proportional to expected content length */
 table.users th:nth-child(1),
 table.users td:nth-child(1),
 table.users th:nth-child(2),
 table.users td:nth-child(2),
 table.users th:nth-child(5),
 table.users td:nth-child(5) {
-    width: 10%;
+    width: 10%; /* First Name, Last Name, Role — short fields */
 }
 
 table.users th:nth-child(3),
 table.users td:nth-child(3) {
-    width: 30%;
+    width: 30%; /* Email — longest field, needs more space */
 }
 
 table.users th:nth-child(4),
 table.users td:nth-child(4) {
-    width: 20%;
+    width: 20%; /* Username */
 }
 
 table.users th:nth-child(6),
 table.users td:nth-child(6) {
-    width: 20%;
+    width: 20%; /* Toggle Admin button column */
 }
 
 table.users {
-    text-align: center;
+    text-align: center; /* Centre all user table content for visual consistency */
 }
 
+/* Fixed width for admin action buttons — ensures alignment across all rows */
 button.admin {
     width: 126px;
 }
 
+/* Row hover highlight — provides visual feedback to help users track which row
+   they're interacting with, especially in dense tables (UX / ACCESSIBILITY) */
 table tr:hover {
-    background-color: #f1f5fb;  /* Subtle row highlight for easier scanning */
+    background-color: #f1f5fb;
 }
 
-/* Ticket images — scale with column width while preserving aspect ratio */
+/* Ticket attachment images — responsive within their column.
+   height: auto preserves aspect ratio as column width changes. */
 table.tickets td img, table.closedTickets td img {
     width: 100%;
     max-width: 100%;
-    height: auto;       /* Let height scale proportionally to width */
+    height: auto;
     display: block;
     margin: 0 auto;
 }
 
-/* --- Column widths (desktop) --- */
+/* ---------------------------------------------------------------
+   COLUMN WIDTHS — Desktop Layout (>872px)
+   Total should sum to 100% per table.
+   Content columns (title, description) receive more space;
+   action columns (edit/close/solve) are kept narrow as they
+   only contain icon buttons.
+   --------------------------------------------------------------- */
+
+/* Title column */
 table.tickets th:nth-child(1),
 table.tickets td:nth-child(1),
 table.closedTickets th:nth-child(1),
-table.closedTickets td:nth-child(1) { width: 20%;} /* Title */
+table.closedTickets td:nth-child(1) { width: 20%; }
 
+/* Description column — widest content field */
 table.tickets th:nth-child(2),
 table.tickets td:nth-child(2),
 table.closedTickets th:nth-child(2),
-table.closedTickets td:nth-child(2) { width: 25%; } /* Description */
+table.closedTickets td:nth-child(2) { width: 25%; }
 
+/* Status column */
 table.tickets th:nth-child(3),
 table.tickets td:nth-child(3),
 table.closedTickets th:nth-child(3),
-table.closedTickets td:nth-child(3) { width: 5%; } /* Status */
+table.closedTickets td:nth-child(3) { width: 5%; }
 
+/* Priority column */
 table.tickets th:nth-child(4),
 table.tickets td:nth-child(4),
 table.closedTickets th:nth-child(4),
-table.closedTickets td:nth-child(4) { width: 5%; } /* Priority */
+table.closedTickets td:nth-child(4) { width: 5%; }
 
-/* Action columns (Edit / Close / Solve) — kept narrow since they only hold icon buttons */
+/* Edit / Close / Solve — icon-only action columns, kept narrow */
 table.tickets th:nth-child(5),
 table.tickets td:nth-child(5),
 table.tickets th:nth-child(6),
@@ -374,56 +453,69 @@ table.tickets td:nth-child(6),
 table.tickets th:nth-child(7),
 table.tickets td:nth-child(7) { width: 5%; }
 
+/* Image column — capped to prevent oversized images dominating the row */
 table.tickets th:nth-child(8),
 table.tickets td:nth-child(8) {
     width: 21%;
-    max-width: 150px;  /* Image column — capped to prevent oversized images dominating */
+    max-width: 150px;
 }
 
+/* Closed tickets table has fewer action columns — widths adjusted accordingly */
 table.closedTickets th:nth-child(5),
-table.closedTickets td:nth-child(5) {width: 6%;}
+table.closedTickets td:nth-child(5) { width: 6%; }
 
 table.closedTickets th:nth-child(6),
-table.closedTickets td:nth-child(6) {
-    width: 10%;
-}
+table.closedTickets td:nth-child(6) { width: 10%; }
 
 
+/* ---------------------------------------------------------------
+   TICKET STATUS ROW COLOURS
+   Colour-coding ticket rows by status provides instant visual triage,
+   allowing users and admins to assess workload at a glance (UX).
+   The CSS class is applied dynamically in the template using
+   class="status-{{ ticket[4] | lower }}" — the integer status is
+   lowercased and matched to these selectors.
+   --------------------------------------------------------------- */
 
-/* --- Ticket status row colours --- */
-
-/* Closed tickets are dimmed to indicate they are no longer active */
+/* Status 4 — Closed: dimmed to visually de-emphasise inactive tickets */
 tr.status-4 {
     opacity: 0.6;
     background-color: #f8f9fa;
 }
 
-/* Solved tickets are highlighted green to distinguish from closed */
+/* Status 5 — Solved: green highlight celebrates resolution (positive UX feedback) */
 tr.status-5 {
     background-color: #d4edda;
 }
 
+/* Status 3 — In Progress: yellow signals active work underway */
 tr.status-3 {
-    background-color: #fff3cd; /* In-progress tickets highlighted yellow */
+    background-color: #fff3cd;
 }
 
+/* Status 1 — Open: blue indicates awaiting action */
 tr.status-1 {
-    background-color: #cce5ff; /* Open tickets highlighted blue */
+    background-color: #cce5ff;
 }
 
+/* Status 2 — Pending: pink/red signals urgency or blocked state */
 tr.status-2 {
-    background-color: #f892b488; /* Pending tickets highlighted red */
+    background-color: #f892b488;
 }
 
 
 /* ============================================================
-   RESPONSIVE — SMALL SCREENS (max 872px)
-   Adjustments for tablets and mobile devices
+   8. RESPONSIVE — SMALL SCREENS (max-width: 872px)
+   Adjustments for tablets and mobile devices.
+   The breakpoint of 872px was chosen because below this width the
+   8-column ticket table begins to feel cramped (UX research decision).
    ============================================================ */
 
 @media (max-width: 872px) {
 
-    /* Shrink action columns to icon-only width on small screens */
+    /* Collapse action columns to their minimum viable width —
+       icon buttons are 40x40px so 36px triggers horizontal scroll rather
+       than clipping the icon */
     table.tickets th:nth-child(5),
     table.tickets td:nth-child(5),
     table.tickets th:nth-child(6),
@@ -434,13 +526,15 @@ tr.status-2 {
         padding: 6px 2px;
     }
 
-    /* Hide image column on mobile — images are supplementary detail */
+    /* Hide the image column on mobile — images are supplementary detail.
+       Hiding them recovers ~21% of table width for essential content columns.
+       The image is still accessible by opening the ticket in edit mode. */
     table.tickets th:nth-child(8),
     table.tickets td:nth-child(8) {
         display: none;
     }
 
-    /* Redistribute freed space to content columns */
+    /* Redistribute the freed image column space to content columns */
     table.tickets th:nth-child(1),
     table.tickets td:nth-child(1) { width: 25%; }
 
@@ -452,7 +546,8 @@ tr.status-2 {
     table.tickets th:nth-child(4),
     table.tickets td:nth-child(4) { width: 12%; }
 
-    /* Reduce font size and padding so rows remain compact on small screens */
+    /* Reduce font size and cell padding on small screens to maximise content density
+       while maintaining legibility (RESPONSIVE UI/UX) */
     table.tickets th,
     table.tickets td {
         font-size: 0.8rem;

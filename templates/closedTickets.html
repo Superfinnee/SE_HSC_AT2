@@ -1,3 +1,29 @@
+<!-- ============================================================================
+   closedTickets.html — Piccoli Ticketi: Closed Tickets Archive (Admin View)
+   
+   PURPOSE:
+     Admin-only view that displays all tickets that have been closed (status=4)
+     or solved (status=5) across all users. Provides a complete audit trail of
+     ticket resolutions (ACCOUNTABILITY / INTEGRITY).
+   
+   ACCESS CONTROL:
+     This template is only rendered by the closedTickets() route in app.py,
+     which calls checkAdmin() to verify the user is an admin before rendering.
+     Non-admin users are redirected to / before this template is ever reached.
+   
+   FEATURES:
+     - Restore button: allows admins to move a closed ticket back to active
+       status (status=1) via undoDelete() — important for error correction
+     - Status and Priority columns provide full context on ticket resolution state
+     - Image column preserved for reference — closed tickets may still need
+       their attached screenshots for post-resolution review
+   
+   NOTE:
+     Unlike the user dashboard, this view does NOT filter by show='No'.
+     All closed tickets are shown regardless of the user's hide preference,
+     ensuring the admin has complete visibility (ACCOUNTABILITY).
+   ============================================================================ -->
+
 {% extends "layout.html" %}
 
 {% block body %}
@@ -5,6 +31,8 @@
 <h1>Closed Tickets</h1>
 
 <div class="tickets-container">
+    <!-- .closedTickets CSS class applies appropriate column widths (fewer columns than
+       the active ticket table — no Edit/Close/Solve, only a Restore button) -->
     <table class="closedTickets">
         <tr>
             <th>Title</th>
@@ -14,26 +42,37 @@
             <th>Restore</th>
             <th>Image</th>
         </tr>
+
         {% for ticket in tickets %}
             <tr>
+                <!-- | safe used on server-sanitised data only — escape() applied in app.py
+                   before all ticket data was stored (XSS prevention) -->
                 <td>{{ ticket[2] | safe}}</td>
                 <td>{{ ticket[3] | safe}}</td>
+
+                <!-- statusDict lookup renders the human-readable status label from the integer
+                   stored in the database (e.g. 4 → 'Closed', 5 → 'Solved') -->
                 <td>{{ statusDict[ticket[4]] | safe}}</td>
                 <td>{{ ticket[5] | safe}}</td>
-                <!--Edit Button-->
-                    <td class="edit">
-                        <form class="actionButton" action="{{ url_for('undoDelete') }}" method="POST">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <input type="hidden" name="undo" value="{{ ticket[0] }}">
-                            <button class="edit-btn" title="Undo Delete">&#8630;</button>
-                        </form>
-                    </td>
-                <!--Image-->
-                    <td>
-                        {% if ticket[7] %}
-                            <img src="{{ url_for('static', filename=ticket[7]) }}" alt="Ticket Attachment">
-                        {% endif %}
-                    </td>                
+
+                <!-- Restore button — POSTs to undoDelete(), which moves the ticket back to the
+                   active `tickets` table with status=1 (Open). This allows admins to recover
+                   from accidental closures without data loss (DATA INTEGRITY). -->
+                <td class="edit">
+                    <form class="actionButton" action="{{ url_for('undoDelete') }}" method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="undo" value="{{ ticket[0] }}">
+                        <!-- ↺ symbol (&#8630;) — universally understood "undo" icon (UX) -->
+                        <button class="edit-btn" title="Undo Delete">&#8630;</button>
+                    </form>
+                </td>
+
+                <!-- Image column — preserved in archive view for post-resolution reference -->
+                <td>
+                    {% if ticket[7] %}
+                        <img src="{{ url_for('static', filename=ticket[7]) }}" alt="Ticket Attachment">
+                    {% endif %}
+                </td>
             </tr>
         {% endfor %}
     </table>

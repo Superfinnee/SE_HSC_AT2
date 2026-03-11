@@ -1,9 +1,46 @@
+<!-- ============================================================================
+   admin.html — Piccoli Ticketi: Administrator Dashboard (Admin View)
+   
+   PURPOSE:
+     The primary view for admin users. Displays ALL tickets across all users
+     (fetched by app.py admin() route, ordered by priority then creation date).
+     Extends the base layout template and adds admin-specific controls.
+   
+   DIFFERENCES FROM index.html (RBAC — AUTHORISATION):
+     - Shows ALL users' tickets, not just the logged-in user's
+     - Edit mode includes Status and Priority dropdowns (admins control workflow)
+     - Includes a Solve button (only admins can mark tickets as solved)
+     - Displays ticket author name in the comments section (ACCOUNTABILITY)
+     - No "no tickets" empty state (admins always see the full system view)
+   
+   SECURITY:
+     - This template is only rendered by editItem(), addComment(), and admin()
+       routes in app.py, all of which call checkAdmin() before rendering
+     - CSRF tokens on all POST forms (INTEGRITY)
+     - | safe filter used only on server-sanitised data (XSS prevention)
+     - Status comparison uses integers (ticket[4] == 1) not strings —
+       SQLite returns INTEGER columns as Python ints (TYPE INTEGRITY)
+   
+   TEMPLATE VARIABLES (passed from app.py):
+     tickets    — list of ticket tuples for the current view
+     statusDict — dict mapping integer status codes to label strings
+     priority   — list ['Low', 'Medium', 'High'] for the priority dropdown
+     name       — logged-in admin's first name
+     status     — user's role (always 'admin' in this template)
+     editIndex  — ID of the ticket currently in edit mode (or None)
+     edit       — bool: True when showing the comments section
+     comments   — list of comment tuples for the ticket in edit mode
+     author     — full name of the ticket's creator (for ACCOUNTABILITY display)
+   ============================================================================ -->
+
 {% extends "layout.html" %}
 
 {% block body %}
 
     <h1>Welcome, {{ name }}!</h1>
-    
+    <!-- Hint paragraph — guides admins to discover the comment feature via the Edit button (UX discoverability) -->
+    <p>You can also use the 'Edit' button to add a comment!</p>
+
 <div class="tickets-container">
     <table class="tickets">
         <tr>
@@ -16,115 +53,152 @@
             <th>Solve</th>
             <th>Image</th>
         </tr>
+
         {% for ticket in tickets %}
         <tr>
-        
+
         {% if ticket[0] == editIndex %}
-            <!--------------------------------For when the list is in edit mode------------------------------------>
-                <form action="{{ url_for('saveItem') }}" method="POST">
+        <!-- ---- EDIT MODE ROW ----
+           When this ticket's ID matches editIndex, render editable fields.
+           Admins have more edit controls than users:
+             - Status dropdown: allows admins to move tickets through workflow states
+             - Priority dropdown: allows admins to triage tickets by urgency
+           These fields are not available to regular users (RBAC / AUTHORISATION). -->
+
+            <form action="{{ url_for('saveItem') }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <!-- Title input — pre-filled with current value for convenience (UX) -->
+                <td>
+                    <input type="hidden" name="editIndex" value="{{ ticket[0] | safe }}">
+                    <input type="text" name="newItem" value="{{ ticket[2] | safe }}">
+                </td>
+
+                <!-- Description uses <textarea> to accommodate longer text entries
+                   compared to the user view which uses a single-line input (UX) -->
+                <td>
+                    <textarea type="text" name="newDescription">{{ ticket[3] | safe }}</textarea>
+                </td>
+
+                <!-- Status dropdown — allows admin to manually move tickets through workflow states.
+                   The integer comparison (ticket[4] == 1) correctly matches SQLite INTEGER values.
+                   statusDict lookups display human-readable labels from the server-side dict. -->
+                <td>
+                    <select name="newStatus">
+                        <option value="{{ 1 }}" {% if ticket[4] == 1 %}selected{% endif %}>{{ statusDict[1] }}</option>
+                        <option value="{{ 2 }}" {% if ticket[4] == 2 %}selected{% endif %}>{{ statusDict[2] }}</option>
+                        <option value="{{ 3 }}" {% if ticket[4] == 3 %}selected{% endif %}>{{ statusDict[3] }}</option>
+                        <option value="{{ 4 }}" {% if ticket[4] == 4 %}selected{% endif %}>{{ statusDict[4] }}</option>
+                        <option value="{{ 5 }}" {% if ticket[4] == 5 %}selected{% endif %}>{{ statusDict[5] }}</option>
+                    </select>
+                </td>
+
+                <!-- Priority dropdown — pre-selects the current priority value.
+                   `priority` is the ['Low','Medium','High'] list from app.py;
+                   index access (priority[0]) maps to the form value sent on submit. -->
+                <td>
+                    <select name="newPriority">
+                        <option value="{{ priority[0] }}" {% if ticket[5] == 'Low' %}selected{% endif %}>Low</option>
+                        <option value="{{ priority[1] }}" {% if ticket[5] == 'Medium' %}selected{% endif %}>Medium</option>
+                        <option value="{{ priority[2] }}" {% if ticket[5] == 'High' %}selected{% endif %}>High</option>
+                    </select>
+                </td>
+
+                <td>
+                    <button type="submit" class="save-btn" title="save">Save</button>
+                </td>
+            </form>
+
+            <!-- Close button: separate form required because HTML does not allow nested <form> tags.
+               Archives the ticket to closedTickets with status=4 (Closed). -->
+            <td class="delete">
+                <form class="actionButton" action="{{ url_for('delete_item') }}" method="POST">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <!--Change title-->
-                        <td>
-                            <input type="hidden" name="editIndex" value="{{ ticket[0] | safe }}">
-                            <input type="text" name="newItem" value="{{ ticket[2] | safe }}">
-                        </td>
-                    <!--Change description-->
-                        <td>
-                            <textarea type="text" name="newDescription">{{ ticket[3] | safe }}</textarea>
-                        </td>
-                    <!--Change status-->
-                        <td>
-                            <select name="newStatus">
-                                <option value="{{ 1 }}" {% if ticket[4] == 1 %}selected{% endif %}>{{ statusDict[1] }}</option>
-                                <option value="{{ 2 }}" {% if ticket[4] == 2 %}selected{% endif %}>{{ statusDict[2] }}</option>
-                                <option value="{{ 3 }}" {% if ticket[4] == 3 %}selected{% endif %}>{{ statusDict[3] }}</option>
-                                <option value="{{ 4 }}" {% if ticket[4] == 4 %}selected{% endif %}>{{ statusDict[4] }}</option>
-                                <option value="{{ 5 }}" {% if ticket[4] == 5 %}selected{% endif %}>{{ statusDict[5] }}</option>
-                            </select>
-                        </td>
-                    <!--Change priority-->
-                        <td>
-                            <select name="newPriority">
-                                <option value="{{ priority[0] }}" {% if ticket[5] == 'Low' %}selected{% endif %}>Low</option>
-                                <option value="{{ priority[1] }}" {% if ticket[5] == 'Medium' %}selected{% endif %}>Medium</option>
-                                <option value="{{ priority[2] }}" {% if ticket[5] == 'High' %}selected{% endif %}>High</option>
-                            </select>
-                        </td>
-                    <!--Submit Button-->
-                        <td>
-                            <button type="submit" class="save-btn" title="save">Save</button>
-                        </td>
-                    </form>
-                <!--Delete Button-->
-                    <td class="delete">
-                        <form class="actionButton" action="{{ url_for('delete_item') }}" method="POST">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <input type="hidden" name="delete" value="{{ ticket[0] }}">
-                            <button class="delete-btn" title="Delete">&#128465;</button>
-                        </form>
-                    </td>
-                <!--Solve Button-->
-                    <td class="solve">
-                        <form class="actionButton" action="{{ url_for('solve_item') }}" method="POST">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <input type="hidden" name="solve" value="{{ ticket[0] }}">
-                            <button class="solve-btn" title="Solve">&#10004;</button>
-                        </form>
-                    </td>
-                <!--Image-->
-                    <td>
-                        {% if ticket[7] %}
-                            <img src="{{ url_for('static', filename=ticket[7]) }}" alt="Ticket Attachment">
-                        {% endif %}
-                    </td>
-                
-            <!-----------------------End of edit mode------------------>
-                {% else %}
-                <!--For when the list is not in edit mode-->
-                    <td>{{ ticket[2] | safe}}</td>
-                    <td>{{ ticket[3] | safe}}</td>
-                    <td>{{ statusDict[ticket[4]] | safe}}</td>
-                    <td>{{ ticket[5] | safe}}</td>
-                <!--Edit Button-->
-                    <td class="edit">
-                        <form class="actionButton" action="{{ url_for('editItem') }}" method="POST">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <input type="hidden" name="edit" value="{{ ticket[0] }}">
-                            <button class="edit-btn" title="Edit">&#9998;</button>
-                        </form>
-                    </td>
-                <!--Close Button-->
-                    <td class="delete">
-                        <form class="actionButton" action="{{ url_for('delete_item') }}" method="POST">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <input type="hidden" name="delete" value="{{ ticket[0] }}">
-                            <button class="delete-btn" title="Delete" onclick="return confirm('Are you sure you want to close this ticket?')">&#128465;</button>
-                        </form>
-                    </td>
-                <!--Solve Button-->
-                    <td class="solve">
-                        <form class="actionButton" action="{{ url_for('solve_item') }}" method="POST">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <input type="hidden" name="solve" value="{{ ticket[0] }}">
-                            <button class="solve-btn" title="Solve" onclick="return confirm('Are you sure you want to mark this ticket as solved?')">&#10004;</button>
-                        </form>
-                    </td>
-                <!--Image-->
-                    <td>
-                        {% if ticket[7] %}
-                            <img src="{{ url_for('static', filename=ticket[7]) }}" alt="Ticket Attachment">
-                        {% endif %}
-                    </td>
+                    <input type="hidden" name="delete" value="{{ ticket[0] }}">
+                    <button class="delete-btn" title="Delete">&#128465;</button>
+                </form>
+            </td>
+
+            <!-- Solve button: archives the ticket to closedTickets with status=5 (Solved).
+               Only admins have access to this button — not available in index.html.
+               This enforces the workflow: users raise tickets, admins resolve them (RBAC). -->
+            <td class="solve">
+                <form class="actionButton" action="{{ url_for('solve_item') }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="solve" value="{{ ticket[0] }}">
+                    <button class="solve-btn" title="Solve">&#10004;</button>
+                </form>
+            </td>
+
+            <td>
+                {% if ticket[7] %}
+                    <img src="{{ url_for('static', filename=ticket[7]) }}" alt="Ticket Attachment">
                 {% endif %}
-                
+            </td>
+
+        {% else %}
+        <!-- ---- READ-ONLY ROW ----
+           Standard non-edit display. Admins see all ticket fields including
+           Status and Priority columns (not shown in the user view). -->
+
+            <td>{{ ticket[2] | safe}}</td>
+            <td>{{ ticket[3] | safe}}</td>
+
+            <!-- statusDict integer lookup — renders 'Open', 'pending', 'In Progress', etc.
+               The | safe filter is used because this value comes from a server-side dict,
+               not user input — not an XSS risk. -->
+            <td>{{ statusDict[ticket[4]] | safe}}</td>
+            <td>{{ ticket[5] | safe}}</td>
+
+            <!-- Edit button — loads this ticket into edit mode by POSTing to editItem() -->
+            <td class="edit">
+                <form class="actionButton" action="{{ url_for('editItem') }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="edit" value="{{ ticket[0] }}">
+                    <button class="edit-btn" title="Edit">&#9998;</button>
+                </form>
+            </td>
+
+            <!-- Close button — confirm dialog prevents accidental closure (UX / INTEGRITY) -->
+            <td class="delete">
+                <form class="actionButton" action="{{ url_for('delete_item') }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="delete" value="{{ ticket[0] }}">
+                    <button class="delete-btn" title="Delete" onclick="return confirm('Are you sure you want to close this ticket?')">&#128465;</button>
+                </form>
+            </td>
+
+            <!-- Solve button — confirm dialog reflects the significance of marking a ticket solved.
+               solve_item() in app.py archives it to closedTickets with status=5. -->
+            <td class="solve">
+                <form class="actionButton" action="{{ url_for('solve_item') }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="solve" value="{{ ticket[0] }}">
+                    <button class="solve-btn" title="Solve" onclick="return confirm('Are you sure you want to mark this ticket as solved?')">&#10004;</button>
+                </form>
+            </td>
+
+            <td>
+                {% if ticket[7] %}
+                    <img src="{{ url_for('static', filename=ticket[7]) }}" alt="Ticket Attachment">
+                {% endif %}
+            </td>
+        {% endif %}
+
         </tr>
         {% endfor %}
     </table>
 </div>
 <br>
-<!--Comments-->
+
+<!-- ---- COMMENTS SECTION ----
+   Rendered only when edit=True (a ticket is in edit mode).
+   Admins can view who created the ticket (author) for ACCOUNTABILITY,
+   and can add comments to collaborate with the ticket submitter. -->
 {% if edit == True %}
 <div class="Comments">
+    <!-- Ticket authorship — visible to admin only (ACCOUNTABILITY).
+       Enables admins to contact the right user about a ticket. -->
     <p>This ticket was created by {{ author }}</p>
     <br><br>
     <table class="comments">
@@ -136,15 +210,20 @@
             {% for comment in comments %}
                 <tr>
                     <td>
+                        <!-- comment[4] is the commenter's cached first name -->
                         {{ comment[4] | safe}}
                     </td>
                     <td class="comment">
+                        <!-- comment[3] is the comment body — sanitised with escape() in app.py -->
                         {{ comment[3] | safe}}
                     </td>
                 </tr>
             {% endfor %}
         </div>
-        <div class="commentText"
+
+        <!-- New comment form — editIndex (ticketID) passed as hidden field to
+           associate the comment with the correct ticket on the server -->
+        <div class="commentText">
             <tr>
                 <form action="{{ url_for('addComment') }}" method="POST">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -157,7 +236,7 @@
         </div>
                 </form>
             </tr>
-        
+
     </table>
 </div>
 {% endif %}
