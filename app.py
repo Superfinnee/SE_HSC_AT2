@@ -1,27 +1,3 @@
-# =============================================================================
-# app.py — Piccoli Ticketi: Main Flask Application (Back-End)
-#
-# PURPOSE:
-#   This file serves as the central back-end module for the Piccoli Ticketi
-#   web application. It handles all routing, business logic, session management,
-#   database interaction, and security enforcement.
-#
-# ARCHITECTURE:
-#   This app follows the MVC (Model-View-Controller) pattern:
-#     - Model:      SQLite database accessed via sqlite3 (initDB, SQL queries)
-#     - View:       Jinja2 HTML templates in /templates
-#     - Controller: Flask route functions in this file
-#
-# SECURITY FEATURES IMPLEMENTED (SE-12-07 / SE-12-04):
-#   - Password hashing via werkzeug (bcrypt-based) — ensures confidentiality
-#   - CSRF protection via Flask-WTF — maintains integrity of form submissions
-#   - Rate limiting via Flask-Limiter — ensures availability (prevents brute force)
-#   - Session cookies: Secure, HttpOnly, SameSite=Strict — prevents session hijacking
-#   - Input sanitisation via markupsafe.escape() — prevents XSS injection
-#   - Parameterised SQL queries — prevents SQL injection
-#   - Role-based access control (RBAC) — manages authentication & authorisation
-# =============================================================================
-
 from flask import Flask, render_template, redirect, request, session, flash, url_for, abort
 import sqlite3, os
 import werkzeug
@@ -649,7 +625,8 @@ def editItem():
 
     # Route to appropriate template based on user role (RBAC)
     if userStatus and userStatus[1] == 'admin':
-        return render_template('admin.html', statusDict=status, tickets=tickets, editIndex=editID,
+        return render_template(
+            'admin.html', statusDict=status, tickets=tickets, editIndex=editID,
             priority=priorities, name=userStatus[0], status=userStatus[1],
             comments=comments, author=author, edit=True
         )
@@ -1002,4 +979,4 @@ def closedTickets():
 # APPLICATION ENTRY POINT
 # =============================================================================
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run()
