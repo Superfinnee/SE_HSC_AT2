@@ -1,5 +1,30 @@
+<!--{# ============================================================================
+   login.html — Piccoli Ticketi: Login Page (Login Module)
+   
+   PURPOSE:
+     Entry point for all users. Provides a username/password form that
+     authenticates against the users table in the database.
+   
+   SECURITY FEATURES:
+     - CSRF token on the POST form (INTEGRITY — prevents forged login requests)
+     - Password field uses type="password" — browser masks input by default
+     - Show/Hide password toggle improves UX for users on mobile without
+       compromising security (the toggle is JS-only, no server involvement)
+     - Rate limiting (5/minute) is enforced in app.py on the /login route,
+       not in the template — server-side enforcement is mandatory (AUTHENTICATION)
+     - `required` attributes provide client-side validation (UX — fast feedback),
+       but server-side empty-check in app.py is the authoritative guard
+   
+   UX DECISIONS:
+     - block buttons overrides layout.html's nav bar with
+       an empty block — unauthenticated users should not see nav actions (RBAC)
+     - Registration link provided for users without an account (discoverability)
+   ============================================================================ #}-->
+
 {% extends "layout.html" %}
 
+<!--{# Override the buttons block with nothing — hides the navigation bar on the login
+   page since the user is not yet authenticated (AUTHORISATION). #}-->
 {% block buttons %}{% endblock %}
 
 {% block body %}
@@ -10,21 +35,34 @@
 
 <h2>Login</h2>
 <div class="formCard">
+    <!--{# POST method — credentials should never be sent as URL query parameters
+       which would expose them in browser history and server logs (CONFIDENTIALITY) #}-->
     <form action="/login" method="POST">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <label for ="username">Username</label>
-        <input name="username" id="username" placeholder="Username" type="text" required> 
+
+        <label for="username">Username</label>
+        <!--{# `required` provides immediate client-side feedback — server validates too (defence in depth) #}-->
+        <input name="username" id="username" placeholder="Username" type="text" required>
         <br><br>
+
         <label for="password">Password</label>
+        <!--{# type="password" masks the input — browser default security behaviour #}-->
         <input name="password" id="password" placeholder="Password" type="password" required>
+
+        <!--{# Show/Hide password toggle — improves usability on mobile where typos in
+           masked fields are common. Implemented in pure JS with no server round-trip.
+           The button uses type="button" to prevent accidental form submission on click. #}-->
         <button type="button" onclick="
             var p = document.getElementById('password');
             p.type = p.type === 'password' ? 'text' : 'password';
             this.textContent = p.type === 'password' ? 'Show' : 'Hide';
             ">Show</button>
         <br><br>
+
         <button type="submit">Login</button>
     </form>
+
+    <!--{# Registration link — provides clear path for new users (UX discoverability) #}-->
     <p>Don't have an account? <a href="/register">Register here</a></p>
 </div>
 

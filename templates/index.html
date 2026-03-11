@@ -1,11 +1,58 @@
+<!--{# ============================================================================
+   index.html — Piccoli Ticketi: User Dashboard (User View)
+   
+   PURPOSE:
+     The primary view for regular (non-admin) users. Displays all tickets
+     belonging to the logged-in user — both active (from `tickets` table)
+     and closed/solved (from `closedTickets` table), combined into a single
+     list by the index() route in app.py.
+   
+   FEATURES:
+     - Inline editing: clicking Edit replaces a table row with input fields
+       without navigating to a separate page (UX — reduces page load overhead)
+     - Status-coloured rows: CSS class driven by ticket[4] (status integer)
+       provides instant visual feedback on ticket state (UX)
+     - Undo close / Hide controls: status-aware button logic adapts the
+       available actions based on each ticket's current state
+     - Comments section: displayed when a ticket is in edit mode (edit=True)
+     - "No tickets" message: shown only when no visible tickets exist,
+       using Jinja2's namespace() to track state across the for loop
+   
+   SECURITY:
+     - CSRF tokens on all POST forms (INTEGRITY)
+     - | safe filter is used ONLY on data that was sanitised server-side
+       with escape() in app.py — raw user input is never marked safe
+     - Confirm dialogs on destructive actions (delete/hide) prevent
+       accidental irreversible operations (UX / INTEGRITY)
+   
+   TEMPLATE VARIABLES (passed from app.py index() / editItem()):
+     tickets    — list of ticket tuples (active + closed combined)
+     statusDict — dict mapping integer status codes to label strings
+     name       — logged-in user's first name (for welcome heading)
+     status     — user's role ('user' or 'admin') for layout.html nav
+     editIndex  — ID of the ticket currently in edit mode (or None)
+     edit       — bool: True when a ticket is being edited (shows comments)
+     comments   — list of comment tuples for the ticket in edit mode
+   ============================================================================ #}-->
+
 {% extends "layout.html" %}
 
 {% block body %}
 
+<!--{# namespace() creates a mutable object whose attributes CAN be updated inside
+   a for loop. A plain set variable inside a loop is scoped locally
+   and cannot modify the outer scope — this is a Jinja2 scoping limitation.
+   ticketsShown tracks whether at least one visible ticket row has been rendered,
+   so the "no tickets" row is only shown when truly no tickets are visible. #}-->
 {% set ns = namespace(ticketsShown = False) %}
 
 <h1>Welcome, {{ name }}!</h1>
+<!--{# Hint paragraph — guides users to discover the comment feature via the Edit button (UX discoverability) #}-->
+<p>You can also use the 'Edit' button to add a comment!</p>
+
 <div class="tickets-container">
+    <!--{# overflow-x: auto on .tickets-container in style.css allows horizontal
+       scroll on small screens rather than breaking the table layout #}-->
     <table class="tickets">
         <tr>
             <th>Title</th>
@@ -15,14 +62,35 @@
             <th>Status</th>
             <th>Image</th>
         </tr>
+
         {% for ticket in tickets %}
+
+        <!--{# ticket[8] is the `show` column from closedTickets (always 'Yes' for active tickets,
+           'Yes' or 'No' for closed ones). Only render rows the user hasn't chosen to hide.
+           This implements the soft-hide feature without deleting data (ACCOUNTABILITY). #}-->
         {% if ticket[8] == 'Yes' %}
+            <!--{# Status CSS class: converts the integer status code (ticket[4]) to a lowercase
+               string (e.g. 4 → 'status-4') that maps to colour rules in style.css.
+               This provides instant visual triage without reading the status column text. #}-->
             <tr class="status-{{ ticket[4] | lower }}">
+
                 {% if ticket[0] == editIndex %}
+                {% set ns.ticketsShown = True %} <!--Makes sure the "you have no tickets function"
+                                                     doesn't run if there is only one ticket-->
+                <!--{# ---- EDIT MODE ROW ----
+                   When this ticket's ID matches editIndex, replace the read-only cells
+                   with editable input fields. The form POSTs to saveItem() on submit.
+                   Note: the <form> tag wraps only the editable cells (title, description,
+                   save button) because HTML does not allow a <form> to span multiple <tr>
+                   elements. The delete button uses its own separate form. #}-->
+
                     <form action="{{ url_for('saveItem') }}" method="POST">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <td>
+                            <!--{# editIndex passed as hidden field so saveItem() knows which DB row to UPDATE #}-->
                             <input type="hidden" name="editIndex" value="{{ ticket[0] }}">
+                            <!--{# | safe used here because this data was sanitised with escape() in app.py
+                               before storage — necessary to correctly render any HTML entities in titles #}-->
                             <input type="text" name="newItem" value="{{ ticket[2] | safe}}">
                         </td>
                         <td>
@@ -32,6 +100,9 @@
                             <button type="submit" class="save-btn" title="save">Save</button>
                         </td>
                     </form>
+
+                    <!--{# Delete button: separate form because HTML forbids nested <form> tags.
+                       The JS confirm() dialog prevents accidental ticket closure (UX). #}-->
                     <td class="delete">
                         <form class="actionButton" action="{{ url_for('delete_item') }}" method="POST">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -39,20 +110,37 @@
                             <button class="delete-btn" title="Delete" onclick="return confirm('Are you sure you want to close this ticket?')">&#128465;</button>
                         </form>
                     </td>
+
+                    <!--{# statusDict lookup renders 'Open', 'pending', etc. from the integer status code.
+                       | safe is applied because the value comes from a server-side dict,
+                       not user input — it is not an XSS risk. #}-->
                     <td>{{ statusDict[ticket[4]] | safe }}</td>
                     <td>
                         {% if ticket[7] %}
-                                <img src="{{ url_for('static', filename=ticket[7]) }}" alt="Ticket Attachment">
+                            <!--{# url_for('static', ...) generates the correct path to the uploaded image.
+                               ticket[7] stores the relative path 'uploads/<uuid>.ext' #}-->
+                            <img src="{{ url_for('static', filename=ticket[7]) }}" alt="Ticket Attachment">
                         {% endif %}
                     </td>
 
-
                 {% else %}
+                <!--{# ---- READ-ONLY ROW ----
+                   Standard non-edit view. Mark this ticket as visible for the
+                   "no tickets" check below. #}-->
+
+                    <!--{# Update the namespace flag — at least one ticket row is being rendered #}-->
                     {% set ns.ticketsShown = True %}
-                    {{ ticketsShown }}
+
+                    <!--{# | safe is used here because ticket title/description were sanitised
+                       with escape() in app.py before storage — not a raw XSS risk #}-->
                     <td>{{ ticket[2] | safe }}</td>
                     <td>{{ ticket[3] | safe }}</td>
+
                     <td class="edit">
+                    <!--{# Status-aware edit/undo button:
+                       - Status 1/2/3 (Open/Pending/In Progress): show Edit button → goes to editItem()
+                       - Status 4/5 (Closed/Solved): show Undo button → goes to undoDelete()
+                       This ensures users can always recover from a mistaken close (UX). #}-->
                     {% if ticket[4] != 4 and ticket[4] != 5 %}
                         <form class="actionButton" action="{{ url_for('editItem') }}" method="POST">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -67,21 +155,28 @@
                         </form>
                     {% endif %}
                     </td>
+
                     <td class="delete">
-                        {% if ticket[4] != 4 and ticket[4] != 5 %}
-                            <form class="actionButton" action="{{ url_for('delete_item') }}" method="POST">
-                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                <input type="hidden" name="delete" value="{{ ticket[0] }}">
-                                <button class="delete-btn" title="Delete" onclick="return confirm('Are you sure you want to close this ticket?')">&#128465;</button>
-                            </form>
-                        {% else %}
-                            <form class="actionButton" action="{{ url_for('hideTicket') }}" method="POST">
-                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                <input type="hidden" name="hide" value="{{ ticket[0] }}">
-                                <button class="delete-btn" title="Hide" onclick="return confirm('Are you sure you want to hide this ticket? This action cannot be undone')">Hide</button>
-                            </form>
-                        {% endif %}
+                    <!--{# Status-aware close/hide button:
+                       - Active tickets: Delete button → archives to closedTickets with status=4
+                       - Closed/Solved tickets: Hide button → sets show='No' in closedTickets.
+                         Hide is irreversible, so a stronger confirm message is used (UX / INTEGRITY). #}-->
+                    {% if ticket[4] != 4 and ticket[4] != 5 %}
+                        <form class="actionButton" action="{{ url_for('delete_item') }}" method="POST">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="delete" value="{{ ticket[0] }}">
+                            <button class="delete-btn" title="Delete" onclick="return confirm('Are you sure you want to close this ticket?')">&#128465;</button>
+                        </form>
+                    {% else %}
+                        <form class="actionButton" action="{{ url_for('hideTicket') }}" method="POST">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="hide" value="{{ ticket[0] }}">
+                            <!--{# Stronger warning message — hide cannot be undone unlike close (UX) #}-->
+                            <button class="delete-btn" title="Hide" onclick="return confirm('Are you sure you want to hide this ticket? This action cannot be undone')">Hide</button>
+                        </form>
+                    {% endif %}
                     </td>
+
                     <td>{{ statusDict[ticket[4]] | safe }}</td>
                     <td>
                         {% if ticket[7] %}
@@ -92,10 +187,14 @@
             </tr>
         {% endif %}
         {% endfor %}
+
+        <!--{# "No tickets" empty state row — only rendered when ns.ticketsShown is still False
+           after the loop, meaning no visible tickets exist for this user.
+           The call to action link guides new users towards creating their first ticket (UX). #}-->
         {% if not ns.ticketsShown %}
             <tr>
                 <td colspan="6" style="text-align:center; padding: 20px; color: #888;">
-                    You have no tickets yet. 
+                    You have no tickets yet.
                     <a href="/createTicket">Create your first one here.</a>
                 </td>
             </tr>
@@ -103,6 +202,10 @@
     </table>
 </div>
 
+<!--{# ---- COMMENTS SECTION ----
+   Only rendered when edit=True (i.e. a ticket is in edit mode).
+   Displays the existing comment thread and a form to add new comments.
+   Comments allow users and admins to collaborate on ticket resolution (UX / ACCOUNTABILITY). #}-->
 {% if edit == True %}
 <div class="Comments">
     <br><br>
@@ -115,18 +218,25 @@
             {% for comment in comments %}
                 <tr>
                     <td>
+                        <!--{# comment[4] is the commenter's cached first name (stored at comment creation
+                           to avoid a JOIN query on every render — performance optimisation) #}-->
                         {{ comment[4] | safe}}
                     </td>
                     <td class="Comment">
+                        <!--{# comment[3] is the comment text — sanitised in app.py before storage #}-->
                         {{ comment[3] | safe}}
                     </td>
                 </tr>
             {% endfor %}
         </div>
-        <div class="commentText"
+
+        <!--{# New comment input form — POST only, CSRF protected #}-->
+        <div class="commentText">
             <tr>
                 <form action="{{ url_for('addComment') }}" method="POST">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <!--{# editIndex passed as hidden field so addComment() associates the comment
+                       with the correct ticket in the database #}-->
                     <input type="hidden" name="ticketID" value="{{ editIndex }}">
                     <input type="textbox" class="commentBox" name="addComment" placeholder="Add a new comment...">
         </div>
@@ -136,7 +246,7 @@
         </div>
                 </form>
             </tr>
-        
+
     </table>
 </div>
 {% endif %}

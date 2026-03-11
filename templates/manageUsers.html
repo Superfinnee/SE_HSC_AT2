@@ -1,3 +1,33 @@
+<!--{# ============================================================================
+   manageUsers.html — Piccoli Ticketi: User Management Page (Admin View)
+   
+   PURPOSE:
+     Allows admins to view all registered users and manage their roles.
+     The SuperAdmin ('SuperFinnee') additionally has access to a user
+     deletion control, implementing a tiered privilege system.
+   
+   PRIVILEGE TIERS (ROLE-BASED ACCESS CONTROL — SE-12-04 / SE-12-07):
+     1. Regular user  — cannot access this page at all (redirected by manageUsers())
+     2. Admin         — can view all users and toggle their admin status
+     3. SuperAdmin    — all of the above, plus permanently delete user accounts
+   
+   SECURITY:
+     - This template is only rendered after checkAdmin() confirms admin status
+     - The `username` variable is checked server-side in toggleAdmin() before
+       any privilege changes are committed — template conditions are UX only
+     - CSRF tokens on all POST forms (INTEGRITY)
+     - User passwords are NOT included in the `users` query in app.py —
+       only fname, lname, email, username, status are fetched (CONFIDENTIALITY)
+     - SuperAdmin controls are hidden from regular admins via if username == "SuperFinnee"
+       but server-side checks in deleteUser() enforce this restriction regardless
+   
+   UX DECISIONS:
+     - Toggle Admin button label changes contextually ('Make Admin' vs 'Revoke Admin')
+       so admins can tell the current state and expected outcome at a glance
+     - Fixed button width (button.admin = 126px in style.css) keeps the column
+       consistent regardless of label length
+   ============================================================================ #}-->
+
 {% extends "layout.html" %}
 
 {% block body %}
@@ -12,17 +42,26 @@
             <th>Role</th>
             <th>Toggle Admin</th>
         </tr>
+
         {% for user in users %}
             <tr>
-                <td>{{ user[0] }}</td>
-                <td>{{ user[1] }}</td>
-                <td>{{ user[2] }}</td>
-                <td>{{ user[3] }}</td>
-                <td>{{ user[4] }}</td>
+                <!--{# Display-only user fields — passwords are excluded from this query (CONFIDENTIALITY) #}-->
+                <td>{{ user[0] }}</td>   <!--{# fName #}-->
+                <td>{{ user[1] }}</td>   <!--{# lName #}-->
+                <td>{{ user[2] }}</td>   <!--{# email #}-->
+                <td>{{ user[3] }}</td>   <!--{# username #}-->
+                <td>{{ user[4] }}</td>   <!--{# status: 'user' or 'admin' #}-->
+
                 <td>
+                    <!--{# Context-aware button label:
+                       - If the user is already an admin, offer 'Revoke Admin'
+                       - If the user is a regular user, offer 'Make Admin'
+                       This prevents confusion about what action will be taken (UX). #}-->
                     {% if user[4] == 'admin' %}
                         <form action="{{ url_for('toggleAdmin') }}" method="POST">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <!--{# username passed as hidden field — toggleAdmin() uses this to
+                               identify which account to update in the database #}-->
                             <input type="hidden" name="username" value="{{ user[3] }}">
                             <button class="admin" type="submit">Revoke Admin</button>
                         </form>
@@ -39,30 +78,22 @@
     </table>
 </div>
 <br><br>
-<!--
-<div class="formCard">
-    <h1>Admin Controls</h1>
-    <form method="POST" action="/createAdmin">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <label for="createAdmin">Create Admin:</label>
-        <p>Enter the username of the account you want to make an admin below.</p>
-        <input id="createAdmin" name="username" placeholder="Username" type="text" required autofocus>
-        <button type="submit">Create Admin</button>
-    </form>
-</div>
-<br><br>
-        -->
+
+<!--{# ---- SUPER ADMIN CONTROLS ----
+   Only rendered for the SuperAdmin account ('SuperFinnee').
+   This provides a higher privilege tier than regular admins — only SuperFinnee
+   can permanently delete user accounts (TIERED RBAC / AUTHORISATION).
+   
+   NOTE: The deleteAdmin section is commented out in the current build — it was
+   replaced by the toggleAdmin system which is less destructive and reversible.
+   Commented code is preserved for documentation purposes (SE-12-09). #}-->
 {% if username == "SuperFinnee" %}
 <div class="formCard">
-    <h2>Super Admin Controls</h2><!--
-    <label for="deleteAdmin">Delete Admin:</label>
-    <form action="{{ url_for('deleteAdmin') }}" method="POST">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <p>Enter the username of the admin you want to delete below.</p>
-        <input id="deleteAdmin" name="username" placeholder="Username" type="text" required>
-        <button type="submit">Delete Admin</button>
-    </form>
-    <br><br>-->
+    <h2>Super Admin Controls</h2>
+
+    <!--{# User deletion — permanently removes a user account from the database.
+       This is irreversible, which is why it is restricted to SuperAdmin only.
+       The warning text in the form communicates the severity to the operator (UX / INTEGRITY). #}-->
     <label for="deleteUser">Delete User:</label>
     <form action="{{ url_for('deleteUser') }}" method="POST">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

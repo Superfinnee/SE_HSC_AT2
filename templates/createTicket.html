@@ -1,22 +1,56 @@
+<!--{# ============================================================================
+   createTicket.html — Piccoli Ticketi: Ticket Creation Form (User Module)
+   
+   PURPOSE:
+     Provides a form for authenticated users to submit a new support ticket
+     with a title, description, and optional image attachment.
+     The route is also accessible to admin users (for testing/management).
+   
+   SECURITY FEATURES:
+     - CSRF token on POST form (INTEGRITY — prevents forged ticket submissions)
+     - enctype="multipart/form-data" required for file uploads — without this,
+       the browser only sends the filename, not the file content
+     - accept="image/*" restricts the file picker to images in the browser (UX),
+       but server-side MIME type validation in createTicket() is the authoritative
+       check — client-side restrictions are trivially bypassed (defence in depth)
+     - `required` on title and description — prevents empty ticket submissions
+   
+   UX DECISIONS:
+     - Optional screenshot upload lets users attach visual context to their ticket,
+       reducing back-and-forth clarification between user and admin (UX efficiency)
+     - placeholder text in each field guides users on expected input format
+     - formCard container centres the form and provides the elevated card style
+       consistent with login/register pages (visual consistency)
+   ============================================================================ #}-->
+
 {% extends "layout.html" %}
 
 {% block body %}
 
     <h1>Create New Ticket</h1>
     <div class="formCard">
+        <!--{# POST method with multipart encoding — required for file uploads.
+           Without enctype="multipart/form-data", request.files will be empty in Flask. #}-->
         <form method="POST" action="/createTicket" enctype="multipart/form-data">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <!--{# Title — required short text field identifying the issue #}-->
             <label for="title">Title:</label>
             <input type="text" id="title" name="title" placeholder="Title" required><br><br>
 
+            <!--{# Description — textarea allows multi-line text for detailed issue reporting.
+               `required` ensures admins always have enough context to action the ticket. #}-->
             <label for="description">Description:</label>
             <textarea id="description" name="description" placeholder="Describe your issue" required></textarea><br><br>
 
+            <!--{# Optional image attachment — accept="image/*" filters the file picker to
+               image types for UX, but server-side MIME validation in app.py is the real guard.
+               File is saved with a UUID filename to prevent collisions and path traversal. #}-->
             <label for="attachment">Upload a screenshot (optional):</label>
             <input type="file" id="attachment" name="attachment" accept="image/*"><br><br>
 
             <button type="submit">Create Ticket</button>
         </form>
     </div>
-    
+
 {% endblock %}

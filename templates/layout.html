@@ -1,48 +1,100 @@
+<!--{# ============================================================================
+   layout.html — Piccoli Ticketi: Base Template
+   
+   PURPOSE:
+     This is the master layout template that all other pages extend using
+     Jinja2's template inheritance ({% extends "layout.html" %}).
+     It provides the shared HTML structure, CSS link, flash messages, and
+     navigation bar — ensuring visual and functional consistency across all
+     pages without code duplication (DRY principle / modular structure).
+   
+   TEMPLATE INHERITANCE PATTERN:
+     Child templates override two named blocks:
+       block buttons — overridden by login.html and register.html
+                             to HIDE the nav bar (unauthenticated pages)
+       block body    — overridden by every page to inject page content
+   
+   SECURITY:
+     - CSRF token is embedded in the logout form (Flask-WTF)
+     - Logout uses POST, not GET — prevents logout via CSRF link (INTEGRITY)
+   ============================================================================ #}-->
+
 <!DOCTYPE html>
 <html lang="en">
     <head>
         <meta charset="UTF-8">
+        <!--{# viewport meta tag: ensures the page scales correctly on mobile devices.
+           initial-scale=1 prevents iOS from zooming out by default (RESPONSIVE UX). #}-->
         <meta name="viewport" content="initial-scale=1, width=device-width">
+        <!--{# Central stylesheet — url_for generates the correct absolute path regardless
+           of deployment environment (PythonAnywhere, local, etc.) #}-->
         <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
         <Title>Piccoli Ticketi</Title>
     </head>
     <body>
+
+        <!--{# Flash messages section — rendered inside .wrapper for consistent centering.
+           get_flashed_messages(with_categories=true) retrieves the category ('error'/'success')
+           alongside the message text so the appropriate CSS class can be applied.
+           Messages are automatically cleared after one render (Flask one-time messages). #}-->
         <div class="wrapper">
             {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
             <div class="flash-messages">
                 {% for category, message in messages %}
+                <!--{# The category ('error' or 'success') is used directly as a CSS class name,
+                   mapping to .error (red) and .success (green) styles in style.css #}-->
                 <p class="{{ category }}">{{ message }}</p>
                 {% endfor %}
             </div>
             {% endif %}
             {% endwith %}
         </div>
+
+        <!--{# Navigation bar block — overridden by login.html and register.html with an
+           empty block to suppress the nav bar on pages where the user is not yet
+           authenticated (AUTHENTICATION — unauthenticated users cannot access nav actions). #}-->
         {% block buttons %}
         <div class="logoutContainer">
+
+            <!--{# Logout uses POST to prevent CSRF-based logout via a crafted GET link.
+               CSRF token is included in all state-changing forms (INTEGRITY). #}-->
             <form action="{{ url_for('logout') }}" method="POST">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit">Logout</button>
             </form>
+
+            <!--{# Dashboard link — GET request, no CSRF token required (no state change) #}-->
             <form action="{{ url_for('index') }}" method="get">
                 <button type="submit">Back to Dashboard</button>
             </form>
+
+            <!--{# Create Ticket link — navigates to the ticket creation form #}-->
             <form action="{{ url_for('createTicket') }}" method="get">
                 <button type="submit">Create Ticket</button>
             </form>
+
+            <!--{# Admin-only navigation items — only rendered when the current user's
+               status is 'admin'. This is enforced server-side in each route, but
+               hiding the buttons here also improves UX by removing irrelevant options
+               from the user's view (ROLE-BASED ACCESS CONTROL / AUTHORISATION). #}-->
             {% if status == "admin" %}
                 <form action="{{ url_for('manageUsers') }}" method="get">
                     <button type="submit">Manage Users</button>
                 </form>
-                <form class="closedTickets" action="{{ url_for("closedTickets") }}" method="GET">
+                <form class="closedTickets" action="{{ url_for('closedTickets') }}" method="GET">
                     <button type="submit" title="View Closed Tickets">View Closed Tickets</button>
                 </form>
             {% endif %}
         </div>
         {% endblock %}
+
+        <!--{# Page content block — each child template injects its unique body content here #}-->
         {% block body%}
         {% endblock %}
+
+        <!--{# Bottom spacing — ensures content doesn't sit flush against the viewport bottom #}-->
         <br><br><br>
-        
+
     </body>
 </html>

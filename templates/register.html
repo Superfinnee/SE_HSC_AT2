@@ -1,34 +1,78 @@
+<!--{# ============================================================================
+   register.html — Piccoli Ticketi: Registration Page (Login Module)
+   
+   PURPOSE:
+     Allows new users to create an account by submitting their personal
+     details. Data is stored in the `users` table with a bcrypt-hashed password.
+   
+   SECURITY FEATURES:
+     - CSRF token on POST form (INTEGRITY)
+     - type="password" on both password fields — masks input from shoulder-surfing
+     - maxlength attributes mirror server-side length validation in app.py:
+         fName/lName: 50 chars, email: 254 chars (RFC 5321 limit),
+         username: 30 chars, password: 128 chars
+       Client-side maxlength provides immediate UX feedback; server-side
+       validation in app.py is the authoritative check (defence in depth)
+     - `required` on all fields — prevents empty submission at the browser level
+     - Confirm password field has no maxlength — intentionally omitted since the
+       server compares it to the password field rather than storing it
+   
+   UX DECISIONS:
+     - block buttons hides the nav bar for unauthenticated users
+     - Login link provided for returning users (discoverability)
+     - Labels use for="id" attributes enabling click-to-focus (ACCESSIBILITY)
+   ============================================================================ #}-->
+
 {% extends "layout.html" %}
 
+<!--{# Suppress navigation bar — user is not authenticated yet (AUTHORISATION) #}-->
 {% block buttons %}{% endblock %}
 
 {% block body %}
 
 <h1>Register</h1>
 <div class="formCard">
-<form action="/register" method="post">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    
-    <label for="fName">First Name</label>
-    <input id="fName" name="fName" placeholder="First Name" type="text" required maxlength=50>
-    <br>
-    <label for="lName">Last Name</label>
-    <input id="lName" name="lName" placeholder="Last Name" type="text" required maxlength=50>
-    <br>
-    <label for="email">Email</label>
-    <input id="email" name="email" placeholder="Email" type="email" required maxlength=254>
-    <br>
-    <label for="username">Username</label>
-    <input id="username" name="username" placeholder="Username" type="text" required maxlength=30>
-    <br>
-    <label for="password">Password</label>
-    <input id="password" name="password" placeholder="Password" type="password" required maxlength=128>
-    <br>
-    <label for="confirmPassword">Confirm Password</label>
-    <input id="confirmPassword" name="confirmPassword" placeholder="Confirm Password" type="password" required>
-    <br>
-    <button type="submit">Register</button>
-</form>
-<p>Already have an account? <a href="/login">Login here</a></p>
+    <!--{# POST method — personal data must not appear in the URL (CONFIDENTIALITY) #}-->
+    <form action="/register" method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <!--{# First name — maxlength=50 matches server-side validation in register() #}-->
+        <label for="fName">First Name</label>
+        <input id="fName" name="fName" placeholder="First Name" type="text" required maxlength=50>
+        <br>
+
+        <!--{# Last name — maxlength=50 matches server-side validation #}-->
+        <label for="lName">Last Name</label>
+        <input id="lName" name="lName" placeholder="Last Name" type="text" required maxlength=50>
+        <br>
+
+        <!--{# type="email" provides browser-level email format validation (UX fast feedback) #}-->
+        <!--{# maxlength=254 follows RFC 5321 maximum email address length #}-->
+        <label for="email">Email</label>
+        <input id="email" name="email" placeholder="Email" type="email" required maxlength=254>
+        <br>
+
+        <!--{# maxlength=30 — short enough to prevent excessively long usernames in the DB #}-->
+        <label for="username">Username</label>
+        <input id="username" name="username" placeholder="Username" type="text" required maxlength=30>
+        <br>
+
+        <!--{# type="password" masks input — password is hashed in app.py before storage.
+           maxlength=128 matches bcrypt's practical input limit (CONFIDENTIALITY). #}-->
+        <label for="password">Password</label>
+        <input id="password" name="password" placeholder="Password" type="password" required maxlength=128>
+        <br>
+
+        <!--{# Confirm password — no maxlength needed as it is compared then discarded,
+           never stored. Server checks both fields match before hashing. #}-->
+        <label for="confirmPassword">Confirm Password</label>
+        <input id="confirmPassword" name="confirmPassword" placeholder="Confirm Password" type="password" required>
+        <br>
+
+        <button type="submit">Register</button>
+    </form>
+
+    <!--{# Login link — guides returning users back to the correct page (UX) #}-->
+    <p>Already have an account? <a href="/login">Login here</a></p>
 </div>
 {% endblock %}
